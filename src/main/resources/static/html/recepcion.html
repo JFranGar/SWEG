@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Recepción - SWGEC</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
+      <nav class="nav"><a class="active" href="#">Recepción</a></nav>
+      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
+    </aside>
+    <main class="main container">
+      <div class="main-header"><h2>Panel Recepción</h2></div>
+      <div class="card"><div class="card-title">Disponible en Sprint 2</div><p style="color:var(--text-muted)">Funcionalidad de recepción (HU5-HU7) disponible en Sprint 2.</p></div>
+    </main>
+  </div>
+  <div id="toast-container"></div>
+  <script>
+    (async function(){
+      try{const r=await fetch('/api/auth/me',{credentials:'include'}); if(!r.ok) return location.href='/html/login.html'; const me=await r.json(); if(me.rol!=='RECEPCIONISTA'){setTimeout(()=>location.href='/html/login.html',800)}; document.getElementById('btn-logout').addEventListener('click',async()=>{await fetch('/api/auth/logout',{method:'POST',credentials:'include'});location.href='/html/login.html'})}catch(e){location.href='/html/login.html'}
+    })();
+  </script>
+</body>
+</html>
+<!-- recepcion.html - Placeholder Sprint 2 -->
+<!-- TODO: implementar en el Paso 6 -->

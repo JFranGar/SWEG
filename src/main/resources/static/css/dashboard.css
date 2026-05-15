@@ -1,0 +1,15 @@
+.app{display:flex;min-height:100vh}
+.sidebar{width:240px;background:var(--bg-panel);border-right:1px solid var(--border-subtle);padding:20px;display:flex;flex-direction:column}
+.sidebar.collapsed{width:72px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.brand-dot{width:36px;height:36px;border-radius:8px;background:var(--gold-gradient)}
+.brand-text{color:var(--gold);font-weight:800}
+.nav{flex:1}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;color:var(--text-primary);margin-bottom:6px}
+.nav a.active{background:rgba(255,215,0,0.08);border-left:3px solid rgba(255,215,0,0.25)}
+.sidebar-footer{border-top:1px solid var(--border-soft);padding-top:12px}
+.main{flex:1;padding:28px 36px;overflow:auto}
+.main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.user-chip{background:var(--bg-panel-alt);padding:6px 10px;border-radius:999px;border:1px solid var(--border-soft)}
+/* dashboard.css - Placeholder Sprint 1 */
+/* TODO: implementar en el Paso 5 */

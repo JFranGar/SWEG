@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin - SWGEC</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
+      <nav class="nav">
+        <a class="active" href="#">Gestión de Salas</a>
+      </nav>
+      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
+    </aside>
+    <main class="main container">
+      <div class="main-header"><h2>Inventario de Salas</h2><div id="user-rol" class="user-chip"></div></div>
+
+      <div class="card" style="margin-bottom:18px">
+        <div class="card-title" id="form-title">Nueva Sala</div>
+        <form id="sala-form">
+          <input type="hidden" id="sala-id">
+          <div class="field"><label>Nombre</label><input id="nombre" class="input"><div id="err-nombre" class="error-msg"></div></div>
+          <div class="field"><label>Tipo</label><select id="tipo" class="select"><option value="">Seleccione...</option><option value="REUNION">REUNION</option><option value="SEMINARIO">SEMINARIO</option><option value="TRABAJO">TRABAJO</option></select><div id="err-tipo" class="error-msg"></div></div>
+          <div class="field"><label>Capacidad</label><input id="capacidad" type="number" min="1" class="input"><div id="err-capacidad" class="error-msg"></div></div>
+          <div style="display:flex;gap:8px"><button id="btn-guardar" class="btn btn-primary">Guardar</button><button id="btn-cancelar" type="button" class="btn btn-secondary" style="display:none">Cancelar</button></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Salas registradas</div>
+        <table class="table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="tabla-salas"></tbody></table>
+      </div>
+    </main>
+  </div>
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/guards.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>
+<!-- admin.html - Placeholder Sprint 1 - HU2 -->
+<!-- TODO: implementar en el Paso 5 -->
