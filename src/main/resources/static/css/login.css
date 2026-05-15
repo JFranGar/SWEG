@@ -1,0 +1,8 @@
+.login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+.login-card{width:100%;max-width:420px;background:var(--bg-panel);padding:36px 32px;border-radius:var(--radius);box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+.login-brand h1{font-size:28px;background:var(--gold-gradient);-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:800}
+.login-brand p{color:var(--text-muted);font-size:13px;margin-top:6px}
+.login-footer{margin-top:14px;color:var(--text-muted);font-size:13px}
+.full{width:100%}
+/* login.css - Placeholder Sprint 1 */
+/* TODO: implementar en el Paso 5 */

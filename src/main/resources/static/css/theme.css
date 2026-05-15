@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+
+:root{
+  --bg-base: #0A0A0A;
+  --bg-panel: #161616;
+  --bg-panel-alt: #111111;
+  --border-subtle: #2a2a2a;
+  --border-soft: #1e1e1e;
+  --gold: #FFD700;
+  --gold-dark: #C0A000;
+  --gold-gradient: linear-gradient(135deg, #FFD700, #C0A000);
+  --text-primary: #f5f5f5;
+  --text-muted: #9a9a9a;
+  --state-pending: #888888;
+  --state-confirmed: #4488FF;
+  --state-active: #00C851;
+  --state-cancelled: #FF4444;
+  --font-base: 'Inter', system-ui, sans-serif;
+  --radius: 0.625rem;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg-base);color:var(--text-primary);font-family:var(--font-base);font-size:14px}
+a{color:var(--gold);text-decoration:none}
+::selection{background:var(--gold);color:#000}
+
+/* Utility */
+.container{max-width:1100px;margin:0 auto;padding:20px}
+/* theme.css - Placeholder Sprint 1 */
+/* TODO: implementar en el Paso 5 */

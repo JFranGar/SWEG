@@ -1,0 +1,46 @@
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius);padding:10px 14px;border:1px solid transparent;cursor:pointer;font-weight:600}
+.btn:disabled{opacity:0.55;cursor:not-allowed}
+.btn-primary{background:var(--gold-gradient);color:#111;border:1px solid rgba(0,0,0,0.15);box-shadow:0 6px 14px rgba(192,160,0,0.08)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(255,215,0,0.12)}
+.btn-secondary{background:transparent;color:var(--text-primary);border:1px solid var(--border-subtle)}
+.btn-danger{background:transparent;color:var(--state-cancelled);border:1px solid rgba(255,68,68,0.15)}
+
+/* Fields */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.6px}
+.input,.select{background:var(--bg-panel);border:1px solid var(--border-soft);padding:10px;border-radius:8px;color:var(--text-primary)}
+.input:focus,.select:focus{outline:none;border-color:var(--gold);box-shadow:0 4px 20px rgba(255,215,0,0.15)}
+.input.error,.select.error{border-color:var(--state-cancelled)}
+.field .error-msg{color:var(--state-cancelled);font-size:12px;min-height:14px}
+
+/* Card */
+.card{background:var(--bg-panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:18px}
+.card-title{color:var(--gold);font-weight:700;margin-bottom:10px}
+
+/* Table */
+.table{width:100%;border-collapse:collapse}
+.table thead th{color:var(--text-muted);text-align:left;padding:10px}
+.table tbody td{padding:10px;border-top:1px solid var(--border-subtle)}
+.table tbody tr:hover{background:rgba(255,215,0,0.02)}
+
+/* Badges */
+.badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:600;font-size:12px}
+.badge-pending{background:rgba(136,136,136,0.12);color:var(--state-pending)}
+.badge-confirmed{background:rgba(68,136,255,0.08);color:var(--state-confirmed)}
+.badge-active{background:rgba(0,200,81,0.08);color:var(--state-active)}
+.badge-cancelled{background:rgba(255,68,68,0.06);color:var(--state-cancelled)}
+
+/* Toasts */
+#toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:9999}
+.toast{padding:12px 16px;border-radius:10px;color:#111;background:#fff;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,0.3);animation:toastIn .18s ease}
+.toast.success{background:linear-gradient(90deg,#E8F8F1,#DFF8EA);color:#072a14}
+.toast.error{background:linear-gradient(90deg,#FBEAEA,#F9DADA);color:#3a0606}
+.toast.info{background:linear-gradient(90deg,#EAF3FF,#DDEBFF);color:#02223a}
+@keyframes toastIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Spinner */
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,0.08);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* components.css - Placeholder Sprint 1 */
+/* TODO: implementar en el Paso 5 */

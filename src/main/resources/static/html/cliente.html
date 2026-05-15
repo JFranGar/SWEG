@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Cliente - SWGEC</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
+      <nav class="nav">
+        <a class="active" href="#">Nueva Reserva</a>
+      </nav>
+      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
+    </aside>
+    <main class="main container">
+      <div class="main-header"><h2>Reservar Sala</h2><div id="user-correo" class="user-chip"></div></div>
+
+      <div class="card" style="max-width:520px;margin-bottom:18px">
+        <div class="card-title">Nueva Reserva</div>
+        <form id="reserva-form">
+          <div class="field"><label>Sala</label><select id="sala" class="select"></select><div id="err-sala" class="error-msg"></div></div>
+          <div class="field"><label>Fecha</label><input id="fecha" type="date" class="input"><div id="err-fecha" class="error-msg"></div></div>
+          <div style="display:flex;gap:12px"><div style="flex:1" class="field"><label>Hora inicio</label><input id="hora-inicio" type="time" class="input"><div id="err-hora-inicio" class="error-msg"></div></div><div style="flex:1" class="field"><label>Hora fin</label><input id="hora-fin" type="time" class="input"><div id="err-hora-fin" class="error-msg"></div></div></div>
+          <div><button id="btn-reservar" class="btn btn-primary">Reservar</button></div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mis Reservas</div>
+        <table class="table"><thead><tr><th>Sala</th><th>Fecha</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
+        <tbody id="tabla-reservas"></tbody></table>
+      </div>
+    </main>
+  </div>
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/guards.js"></script>
+  <script src="/js/cliente.js"></script>
+</body>
+</html>
+<!-- cliente.html - Placeholder Sprint 1 - HU4 -->
+<!-- TODO: implementar en el Paso 5 -->
