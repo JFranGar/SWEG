@@ -8,8 +8,8 @@ package com.cleancodecrew.sweg.model;
 public enum EstadoReserva {
     PENDIENTE,
     CONFIRMADA,
-    ACTIVA,
-    CANCELADA,
-    FINALIZADA
+    EN_USO,
+    FINALIZADA,
+    CANCELADA
 }
 

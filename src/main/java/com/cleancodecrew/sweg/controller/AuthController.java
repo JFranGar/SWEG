@@ -27,6 +27,7 @@ public class AuthController {
 		this.passwordHasher = passwordHasher;
 	}
 
+	// CA-HU01-01, CA-HU01-02, CA-HU01-03
 	@PostMapping("/login")
 	public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
 		var maybe = usuarioRepository.findByCorreoIgnoreCase(req.getCorreo());
@@ -45,6 +46,11 @@ public class AuthController {
 			u.registrarIntentoFallido();
 			usuarioRepository.save(u);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Credenciales no validas"));
+		}
+
+		// CA-HU01-01: el rol seleccionado debe coincidir con el rol real.
+		if (!u.getRol().name().equals(req.getRolSeleccionado().name())) {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "El rol seleccionado no coincide con su cuenta."));
 		}
 
 		u.registrarLoginExitoso();

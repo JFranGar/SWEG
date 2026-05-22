@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/style.css">
   <style>body{background:var(--bg-base)}</style>
 </head>
 <body>
@@ -17,6 +18,16 @@
         <p>Gestión de Espacios de Coworking — Sprint 1</p>
       </div>
       <form id="login-form" novalidate>
+        <div class="field">
+          <label>Seleccionar rol</label>
+          <div class="role-grid">
+            <div class="role-card" data-rol="ADMIN"><span class="role-icon">👑</span>Administrador</div>
+            <div class="role-card" data-rol="RECEPCIONISTA"><span class="role-icon">🛎️</span>Recepcionista</div>
+            <div class="role-card" data-rol="CLIENTE"><span class="role-icon">👤</span>Cliente</div>
+          </div>
+          <input type="hidden" id="rol-seleccionado" name="rolSeleccionado">
+          <div id="err-rol" class="error-msg"></div>
+        </div>
         <div class="field">
           <label for="correo">Correo</label>
           <input id="correo" class="input" type="email" autocomplete="email">

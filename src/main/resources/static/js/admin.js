@@ -13,7 +13,16 @@
 
   function validar(){limpiarErrores();let ok=true; if(!nombre.value.trim()){errNombre.textContent='Nombre obligatorio';nombre.classList.add('error');ok=false} if(!tipo.value){errTipo.textContent='Tipo obligatorio';tipo.classList.add('error');ok=false} if(!capacidad.value || parseInt(capacidad.value)<=0){errCap.textContent='Capacidad inválida';capacidad.classList.add('error');ok=false} return ok}
 
-  form.addEventListener('submit',async function(e){e.preventDefault(); if(!validar()) return; btnGuardar.disabled=true; const payload={nombre:nombre.value.trim(),tipo:tipo.value,capacidadMaxima:parseInt(capacidad.value)}; try{ if(idEl.value){await api.put('/api/admin/salas/'+idEl.value,payload); toast.success('Sala actualizada');} else {await api.post('/api/admin/salas',payload); toast.success('Sala creada');} modoCreacion(); await cargarSalas();}catch(err){ if(err.status===409){errNombre.textContent='Ya existe una sala con ese nombre';nombre.classList.add('error'); toast.error(err.message)} else {toast.error(err.message||'Error')} } finally{btnGuardar.disabled=false}})
+  form.addEventListener('submit',async function(e){e.preventDefault(); if(!validar()) return; btnGuardar.disabled=true; const payload={nombre:nombre.value.trim(),tipo:tipo.value,capacidadMaxima:parseInt(capacidad.value)}; try{ if(idEl.value){await api.put('/api/admin/salas/'+idEl.value,payload); toast.success('Sala actualizada');} else {await api.post('/api/admin/salas',payload); toast.success('Sala creada');} modoCreacion(); await cargarSalas();}catch(err){
+      if(err.status===400){
+        try{pintarErroresCampo(err, { capacidadMaxima: 'capacidad' });}catch(e){}
+        toast.error(err.message);
+      } else if(err.status===409){
+        errNombre.textContent='Ya existe una sala con ese nombre';
+        nombre.classList.add('error');
+        toast.error(err.message)
+      } else {toast.error(err.message||'Error')}
+    } finally{btnGuardar.disabled=false}})
 
   btnCancelar.addEventListener('click',modoCreacion);
 

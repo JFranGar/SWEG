@@ -1,0 +1,20 @@
+.role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.role-card {
+    background: #161616;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 16px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s ease;
+    color: #ddd;
+    font-size: 13px;
+    user-select: none;
+}
+.role-card:hover { border-color: #FFD700; transform: translateY(-1px); }
+.role-card.active { border-color: #FFD700; background: linear-gradient(135deg, #1a1a1a, #161616); box-shadow: 0 0 0 1px #FFD700 inset; }
+
+/* availability cards */
+.availability-card { border-radius: 10px; padding: 12px; margin-top: 12px; }
+.availability-card.available { background: #0f1f11; border: 1px solid #00C851; }
+.availability-card.unavailable { background: #2a1a1a; border: 1px solid #FF4444; }

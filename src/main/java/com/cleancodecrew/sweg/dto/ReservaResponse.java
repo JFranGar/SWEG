@@ -1,7 +1,10 @@
 package com.cleancodecrew.sweg.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+
+import com.cleancodecrew.sweg.model.Reserva;
 
 /**
  * ReservaResponse
@@ -15,7 +18,14 @@ public record ReservaResponse(
         LocalDate fecha,
         LocalTime horaInicio,
         LocalTime horaFin,
-        String estado
+        String estado,
+        LocalDateTime fechaIngreso,
+        LocalDateTime fechaCancelacion
 ) {
     public record SalaMini(Long id, String nombre, String tipo, int capacidadMaxima) {}
+
+    public static ReservaResponse de(Reserva r) {
+        SalaMini sm = new SalaMini(r.getSala().getId(), r.getSala().getNombre(), r.getSala().getTipo().name(), r.getSala().getCapacidadMaxima());
+        return new ReservaResponse(r.getId(), "", sm, r.getFecha(), r.getHoraInicio(), r.getHoraFin(), r.getEstado().name(), r.getFechaIngreso(), r.getFechaCancelacion());
+    }
 }
