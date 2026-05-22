@@ -44,16 +44,28 @@ public class Sala {
     @Builder.Default
     private EstadoSala estado = EstadoSala.DISPONIBLE;
 
+    /** CA-HU02-04: Validación servidor de campos obligatorios. */
     public void validarCamposObligatorios() {
         if (nombre == null || nombre.isBlank() || tipo == null || capacidadMaxima <= 0) {
             throw new IllegalArgumentException("Todos los campos son obligatorios");
         }
     }
 
+    /** CA-HU02-03: Modificación segura de datos de sala. */
     public void actualizarDatos(String nombre, TipoSala tipo, int capacidadMaxima) {
         this.nombre = nombre;
         this.tipo = tipo;
         this.capacidadMaxima = capacidadMaxima;
         validarCamposObligatorios();
+    }
+
+    /** CA-HU07-02: Cambio de estado RESERVADA -> OCUPADA. */
+    public void marcarEnUso() {
+        this.estado = EstadoSala.OCUPADA;
+    }
+
+    /** CA-HU02-06: Eliminación lógica para conservar historial de reservas. */
+    public void eliminar() {
+        this.estado = EstadoSala.ELIMINADA;
     }
 }

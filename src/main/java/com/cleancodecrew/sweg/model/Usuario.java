@@ -59,10 +59,12 @@ public class Usuario {
 
     private LocalDateTime ultimoLogin;
 
+    /** CA-HU01-03: Bloqueo temporal tras MAX_INTENTOS_FALLIDOS. */
     public boolean estaBloqueado() {
         return bloqueadoHasta != null && bloqueadoHasta.isAfter(LocalDateTime.now());
     }
 
+    /** CA-HU01-03: Suma intento y bloquea si alcanza el límite. */
     public void registrarIntentoFallido() {
         this.intentosFallidos++;
         if (this.intentosFallidos >= MAX_INTENTOS_FALLIDOS) {
@@ -71,6 +73,7 @@ public class Usuario {
         }
     }
 
+    /** CA-HU01-01: Login exitoso resetea contadores. */
     public void registrarLoginExitoso() {
         this.intentosFallidos = 0;
         this.bloqueadoHasta = null;

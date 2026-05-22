@@ -43,19 +43,20 @@ public class AuthInterceptor implements HandlerInterceptor {
 		String rol = rolObj != null ? String.valueOf(rolObj) : null;
 
 		// Authorization by path prefix
-		if (path.startsWith("/api/admin/")) {
+		if (path.startsWith("/api/admin/") || path.startsWith("/api/salas")) {
 			if (!"ADMIN".equals(rol)) {
 				log.debug("Request to {} rejected: role {} insufficient", path, rol);
 				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);
 				return false;
 			}
 		} else if (path.startsWith("/api/recepcion/")) {
-			if (!"RECEPCIONISTA".equals(rol)) {
+			// Allow both RECEPCIONISTA and ADMIN to access reception endpoints
+			if (!"RECEPCIONISTA".equals(rol) && !"ADMIN".equals(rol)) {
 				log.debug("Request to {} rejected: role {} insufficient", path, rol);
 				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);
 				return false;
 			}
-		} else if (path.startsWith("/api/cliente/")) {
+		} else if (path.startsWith("/api/cliente/") || path.startsWith("/api/reservas")) {
 			if (!"CLIENTE".equals(rol)) {
 				log.debug("Request to {} rejected: role {} insufficient", path, rol);
 				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);

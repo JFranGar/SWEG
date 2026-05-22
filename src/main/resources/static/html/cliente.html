@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <div class="app">
@@ -21,6 +22,17 @@
       <div class="main-header"><h2>Reservar Sala</h2><div id="user-correo" class="user-chip"></div></div>
 
       <div class="card" style="max-width:520px;margin-bottom:18px">
+        <div class="card-title">Consultar Disponibilidad</div>
+        <form id="disponibilidad-form">
+          <div class="field"><label>Sala</label><select id="sala-dispo" class="select"></select><div id="err-sala-dispo" class="error-msg"></div></div>
+          <div class="field"><label>Fecha</label><input id="fecha-dispo" type="date" class="input"><div id="err-fecha-dispo" class="error-msg"></div></div>
+          <div style="display:flex;gap:12px"><div style="flex:1" class="field"><label>Hora inicio</label><input id="hora-inicio-dispo" type="time" class="input"><div id="err-hora-inicio-dispo" class="error-msg"></div></div><div style="flex:1" class="field"><label>Hora fin</label><input id="hora-fin-dispo" type="time" class="input"><div id="err-hora-fin-dispo" class="error-msg"></div></div></div>
+          <div><button id="btn-consultar" type="submit" class="btn btn-secondary">Consultar</button></div>
+        </form>
+        <div id="disponibilidad-result"></div>
+      </div>
+
+      <div class="card" style="max-width:520px;margin-bottom:18px">
         <div class="card-title">Nueva Reserva</div>
         <form id="reserva-form">
           <div class="field"><label>Sala</label><select id="sala" class="select"></select><div id="err-sala" class="error-msg"></div></div>
@@ -32,7 +44,7 @@
 
       <div class="card">
         <div class="card-title">Mis Reservas</div>
-        <table class="table"><thead><tr><th>Sala</th><th>Fecha</th><th>Inicio</th><th>Fin</th><th>Estado</th></tr></thead>
+        <table class="table"><thead><tr><th>Sala</th><th>Fecha</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody id="tabla-reservas"></tbody></table>
       </div>
     </main>

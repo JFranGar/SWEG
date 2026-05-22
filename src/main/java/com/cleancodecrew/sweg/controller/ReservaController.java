@@ -18,9 +18,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.LinkedHashMap;
+import com.cleancodecrew.sweg.dto.DisponibilidadResponse;
 
 @RestController
-@RequestMapping("/api/cliente/reservas")
+@RequestMapping({"/api/cliente/reservas", "/api/reservas"})
 public class ReservaController {
 
 	private final SalaRepository salaRepository;
@@ -48,6 +52,7 @@ public class ReservaController {
 		return ResponseEntity.ok(list);
 	}
 
+	// CA-HU04-01, CA-HU04-02, CA-HU04-03, CA-HU04-04, CA-HU04-05
 	@PostMapping
 	public ResponseEntity<?> crear(@Valid @RequestBody ReservaRequest req, HttpServletRequest request) {
 		var session = request.getSession(false);
@@ -80,8 +85,66 @@ public class ReservaController {
 		}
 
 		Reserva saved = reservaRepository.save(reserva);
-		ReservaResponse.SalaMini sm = new ReservaResponse.SalaMini(sala.getId(), sala.getNombre(), sala.getTipo().name(), sala.getCapacidadMaxima());
-		ReservaResponse resp = new ReservaResponse(saved.getId(), "Reserva confirmada", sm, saved.getFecha(), saved.getHoraInicio(), saved.getHoraFin(), saved.getEstado().name());
+		ReservaResponse resp = ReservaResponse.de(saved);
 		return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+	}
+
+	/** CA-HU05-01, CA-HU05-04, CA-HU05-05 */
+	@GetMapping("/disponibilidad")
+	public ResponseEntity<?> disponibilidad(@RequestParam(required = false) Long salaId,
+	                                       @RequestParam(required = false) LocalDate fecha,
+	                                       @RequestParam(required = false) LocalTime horaInicio,
+	                                       @RequestParam(required = false) LocalTime horaFin,
+	                                       HttpServletRequest request) {
+
+		// Precondiciones: validar campos y devolver ApiError.fields cuando falten
+		Map<String, String> campos = new LinkedHashMap<>();
+		if (salaId == null) campos.put("salaId", "salaId es obligatorio");
+		if (fecha == null) campos.put("fecha", "fecha es obligatoria");
+		if (horaInicio == null) campos.put("horaInicio", "horaInicio es obligatorio");
+		if (horaFin == null) campos.put("horaFin", "horaFin es obligatorio");
+		if (!campos.isEmpty()) {
+			return ResponseEntity.badRequest().body(com.cleancodecrew.sweg.dto.ApiError.of(400, "Campos obligatorios ausentes", request.getRequestURI(), campos));
+		}
+
+		// validar rango horario
+		Reserva consultaTemp = Reserva.deConsulta(null, fecha, horaInicio, horaFin);
+		try { consultaTemp.validarRangoHorario(); } catch (IllegalArgumentException ex) {
+			campos.put("horaInicio/horaFin", ex.getMessage());
+			return ResponseEntity.badRequest().body(com.cleancodecrew.sweg.dto.ApiError.of(400, "Rango horario invalido", request.getRequestURI(), campos));
+		}
+
+		// validar fecha no pasada
+		try { consultaTemp.validarFechaNoPasada(); } catch (IllegalArgumentException ex) {
+			campos.put("fecha", ex.getMessage());
+			return ResponseEntity.badRequest().body(com.cleancodecrew.sweg.dto.ApiError.of(400, "Fecha invalida", request.getRequestURI(), campos));
+		}
+
+		var maybeSala = salaRepository.findById(salaId);
+		if (maybeSala.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Sala no encontrada"));
+
+		Sala sala = maybeSala.get();
+		Reserva consulta = Reserva.deConsulta(sala, fecha, horaInicio, horaFin);
+		var activas = reservaRepository.findActivasPorSalaYFecha(salaId, fecha);
+		boolean ocupada = activas.stream().anyMatch(consulta::seSolapaCon);
+		DisponibilidadResponse resp = new DisponibilidadResponse(salaId, sala.getNombre(), fecha, horaInicio, horaFin, !ocupada, ocupada ? "No disponible" : "Disponible");
+		return ResponseEntity.ok(resp);
+	}
+
+	/** CA-HU06-01 */
+	@PatchMapping("/{id}/cancelar")
+	public ResponseEntity<?> cancelar(@PathVariable Long id, HttpServletRequest request) {
+		var session = request.getSession(false);
+		if (session == null || session.getAttribute(AuthInterceptor.SESSION_USER_ID) == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		Long clienteId = (Long) session.getAttribute(AuthInterceptor.SESSION_USER_ID);
+		var maybeCliente = usuarioRepository.findById(clienteId);
+		if (maybeCliente.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Cliente no encontrado"));
+		Usuario cliente = maybeCliente.get();
+		var maybe = reservaRepository.findById(id);
+		if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error","Reserva no encontrada"));
+		Reserva r = maybe.get();
+		r.cancelar(cliente);
+		reservaRepository.save(r);
+		return ResponseEntity.ok(Map.of("mensaje","Reserva cancelada correctamente","id", r.getId(), "estado", r.getEstado().name()));
 	}
 }

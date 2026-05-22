@@ -2,6 +2,8 @@ package com.cleancodecrew.sweg.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import com.cleancodecrew.sweg.model.Rol;
 import lombok.Data;
 
 /**
@@ -16,4 +18,7 @@ public class LoginRequest {
 
 	@NotBlank(message = "La contrasena es obligatoria")
 	private String contrasena;
+
+	@NotNull(message = "Debe seleccionar un rol")
+	private Rol rolSeleccionado;
 }

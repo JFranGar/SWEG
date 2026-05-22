@@ -2,6 +2,7 @@
 async function guard(rolesPermitidos){
   try{
     const me = await api.get('/api/auth/me');
+    if(!me){ location.href='/html/login.html'; return null }
     if(!rolesPermitidos.includes(me.rol)){
       toast.error('Acceso denegado');
       setTimeout(()=>location.href='/html/login.html',800);
