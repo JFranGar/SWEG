@@ -1,6 +1,7 @@
 package com.cleancodecrew.sweg.controller;
 
 import com.cleancodecrew.sweg.dto.ApiError;
+import com.cleancodecrew.sweg.dto.PanelSalaResponse;
 import com.cleancodecrew.sweg.dto.ReservaResponse;
 import com.cleancodecrew.sweg.model.EstadoSala;
 import com.cleancodecrew.sweg.model.Reserva;
@@ -19,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/recepcion")
@@ -118,6 +121,43 @@ public class RecepcionController {
     public ResponseEntity<List<ReservaResponse>> salasEnUso() {
         return ResponseEntity.ok(reservaRepo.findTodasEnUso()
                 .stream().map(ReservaResponse::de).toList());
+    }
+
+    /**
+     * CA-HU09-01: Vista del día para recepcionistas — todas las salas con estado efectivo hoy.
+     * Estado efectivo: OCUPADA→EN_USO, DISPONIBLE+reserva hoy→RESERVADA, demás usa sala.estado.
+     */
+    @GetMapping("/panel-salas")
+    public ResponseEntity<List<PanelSalaResponse>> panelSalas() {
+        LocalDate hoy = LocalDate.now();
+        Set<Long> salasConReservaHoy = reservaRepo.findActivasHoy(hoy)
+                .stream().map(r -> r.getSala().getId()).collect(Collectors.toSet());
+
+        List<PanelSalaResponse> panel = salaRepository.findAll().stream()
+                .filter(s -> s.getEstado() != EstadoSala.ELIMINADA)
+                .map(s -> {
+                    String estadoPanel = switch (s.getEstado()) {
+                        case OCUPADA       -> "EN_USO";
+                        case EN_LIMPIEZA   -> "EN_LIMPIEZA";
+                        case MANTENIMIENTO -> "MANTENIMIENTO";
+                        default -> salasConReservaHoy.contains(s.getId()) ? "RESERVADA" : "DISPONIBLE";
+                    };
+                    return new PanelSalaResponse(s.getId(), s.getNombre(), s.getTipo().name(), s.getCapacidadMaxima(), estadoPanel);
+                })
+                .sorted((a, b) -> a.nombre().compareToIgnoreCase(b.nombre()))
+                .toList();
+        return ResponseEntity.ok(panel);
+    }
+
+    /** CA-HU08-02: Reservas del día para una sala específica (vista recepcionista). */
+    @GetMapping("/salas/{id}/reservas-hoy")
+    public ResponseEntity<?> reservasSalaHoy(@PathVariable Long id, HttpServletRequest req) {
+        if (salaRepository.findById(id).isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiError.of(404, "Sala no encontrada", req.getRequestURI()));
+        }
+        var reservas = reservaRepo.findReservasDetalladasPorSalaYFecha(id, LocalDate.now());
+        return ResponseEntity.ok(reservas.stream().map(ReservaResponse::de).toList());
     }
 
     /** CA-HU08-03: Marca una sala EN_LIMPIEZA como DISPONIBLE una vez finalizada la limpieza. */

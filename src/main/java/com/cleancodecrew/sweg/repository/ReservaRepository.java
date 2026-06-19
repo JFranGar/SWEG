@@ -117,12 +117,25 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 	""")
 	List<Reserva> findActivasHoy(@org.springframework.data.repository.query.Param("hoy") LocalDate hoy);
 
-	/** CA-HU08-01: Todas las reservas actualmente EN_USO (para vista recepcionista). */
+	/** CA-HU08-01: Todas las reservas actualmente EN_USO (para vista rápida del recepcionista). */
 	@org.springframework.data.jpa.repository.Query("""
 		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
 		WHERE r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
 		ORDER BY r.sala.nombre ASC
 	""")
 	List<Reserva> findTodasEnUso();
+
+	/** CA-HU08-02: Reservas del día para una sala con datos de cliente precargados. */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+		WHERE r.sala.id = :salaId
+		  AND r.fecha = :fecha
+		  AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
+		ORDER BY r.horaInicio ASC
+	""")
+	List<Reserva> findReservasDetalladasPorSalaYFecha(
+		@org.springframework.data.repository.query.Param("salaId") Long salaId,
+		@org.springframework.data.repository.query.Param("fecha")  LocalDate fecha
+	);
 }
 
