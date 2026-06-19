@@ -6,7 +6,6 @@ import com.cleancodecrew.sweg.dto.ReservaResponse;
 import com.cleancodecrew.sweg.model.EstadoReserva;
 import com.cleancodecrew.sweg.model.Reserva;
 import com.cleancodecrew.sweg.model.Sala;
-import com.cleancodecrew.sweg.model.TipoRegla;
 import com.cleancodecrew.sweg.model.Usuario;
 import com.cleancodecrew.sweg.repository.HorarioReglaRepository;
 import com.cleancodecrew.sweg.repository.ReservaRepository;
@@ -175,29 +174,13 @@ public class ReservaController {
 				.stream().map(HorarioReglaResponse::de).toList());
 	}
 
-	/** Valida que horaInicio-horaFin respete las reglas APERTURA y BLOQUEO activas para la fecha dada. */
+	private static final LocalTime HORA_APERTURA = LocalTime.of(7, 0);
+	private static final LocalTime HORA_CIERRE   = LocalTime.of(22, 0);
+
+	/** Valida que el horario esté dentro del rango comercial fijo 07:00–22:00. */
 	private void validarReglas(LocalDate fecha, LocalTime horaInicio, LocalTime horaFin) {
-		var reglas = horarioReglaRepository.findByActivoTrue();
-		if (reglas.isEmpty()) return;
-		int dia = fecha.getDayOfWeek().getValue(); // ISO: 1=Lun…7=Dom
-		var aperturas = reglas.stream()
-				.filter(r -> r.getTipo() == TipoRegla.APERTURA)
-				.filter(r -> r.getDiaSemana() == null || Integer.valueOf(dia).equals(r.getDiaSemana()))
-				.toList();
-		if (!aperturas.isEmpty()) {
-			boolean dentro = aperturas.stream().anyMatch(r ->
-					!horaInicio.isBefore(r.getHoraInicio()) && !horaFin.isAfter(r.getHoraFin()));
-			if (!dentro) throw new ConflictoException("La reserva está fuera del horario comercial");
-		}
-		var bloqueos = reglas.stream()
-				.filter(r -> r.getTipo() == TipoRegla.BLOQUEO)
-				.filter(r -> r.getDiaSemana() == null || Integer.valueOf(dia).equals(r.getDiaSemana()))
-				.toList();
-		for (var r : bloqueos) {
-			if (horaInicio.isBefore(r.getHoraFin()) && r.getHoraInicio().isBefore(horaFin)) {
-				throw new ConflictoException("El horario está bloqueado"
-						+ (r.getDescripcion() != null ? ": " + r.getDescripcion() : ""));
-			}
+		if (horaInicio.isBefore(HORA_APERTURA) || horaFin.isAfter(HORA_CIERRE)) {
+			throw new ConflictoException("El horario debe estar entre 07:00 y 22:00");
 		}
 	}
 

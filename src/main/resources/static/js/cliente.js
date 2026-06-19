@@ -58,6 +58,12 @@
   const errEditFin      = document.getElementById('err-editar-fin');
   const editCapHint     = document.getElementById('edit-capacity-hint');
 
+  /* ── Estado de la reserva que se está editando (para resaltado azul) ── */
+  let editarOriginalInicio = null;
+  let editarOriginalFin    = null;
+  let editarOriginalSalaId = null;
+  let editarOriginalFecha  = null;
+
   /* ── Refs Modal Éxito ── */
   const modalExito = document.getElementById('modal-exito');
   let exitoCb = null;
@@ -119,17 +125,22 @@
       + String(d.getDate()).padStart(2, '0');
   }
 
-  function clasificarSlot(idx, reservas, nowMins, isToday) {
+  function clasificarSlot(idx, reservas, nowMins, isToday, reservaPropia = null) {
     const sMin = TL_H_INI * 60 + idx * 30;
     const eMin = sMin + 30;
     if (isToday && eMin <= nowMins) return 'pasado';
+    if (reservaPropia) {
+      const pIni = parseMins(reservaPropia.horaInicio);
+      const pFin = parseMins(reservaPropia.horaFin);
+      if (sMin >= pIni && eMin <= pFin) return 'propio';
+    }
     if (reservas.some(r => sMin < parseMins(r.horaFin) && parseMins(r.horaInicio) < eMin)) return 'ocupado';
     return 'libre';
   }
 
-  const ESTADO_LABEL = { libre: 'Libre', ocupado: 'Ocupado', pasado: 'Hora pasada' };
+  const ESTADO_LABEL = { libre: 'Libre', ocupado: 'Ocupado', pasado: 'Hora pasada', propio: 'Tu reserva actual' };
 
-  function renderTimelineEn(containerEl, reservas, fecha, onClickSlot) {
+  function renderTimelineEn(containerEl, reservas, fecha, onClickSlot, reservaPropia = null) {
     containerEl.innerHTML = '';
     const hoy     = localDateStr();
     const isToday = fecha === hoy;
@@ -148,7 +159,7 @@
       row.appendChild(timeEl);
 
       if (!isEnd) {
-        const estado = clasificarSlot(i, reservas, nowMins, isToday);
+        const estado = clasificarSlot(i, reservas, nowMins, isToday, reservaPropia);
         const bar    = document.createElement('div');
         bar.className   = 'tl-row-bar ' + estado;
         bar.textContent = ESTADO_LABEL[estado] || estado;
@@ -229,7 +240,11 @@
     ph.textContent = 'Cargando…';
     try {
       const reservas = await api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`);
-      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], fecha, null);
+      const mismoContexto = salaId === editarOriginalSalaId && fecha === editarOriginalFecha;
+      const reservaPropia = (mismoContexto && editarOriginalInicio && editarOriginalFin)
+        ? { horaInicio: editarOriginalInicio, horaFin: editarOriginalFin }
+        : null;
+      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], fecha, null, reservaPropia);
       ph.style.display   = 'none';
       wrap.style.display = 'block';
     } catch {
@@ -355,6 +370,11 @@
     editarCantidad.value = r.cantidadPersonas != null ? r.cantidadPersonas : '';
     if (r.sala) editarSala.value = r.sala.id;
     editarFecha.min = localDateStr();
+
+    editarOriginalInicio = String(r.horaInicio).substring(0, 5);
+    editarOriginalFin    = String(r.horaFin).substring(0, 5);
+    editarOriginalSalaId = r.sala ? String(r.sala.id) : null;
+    editarOriginalFecha  = r.fecha;
 
     actualizarHintCapacidadEditar();
 
