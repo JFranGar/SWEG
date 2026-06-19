@@ -73,5 +73,19 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 			@org.springframework.data.repository.query.Param("horaActual") LocalTime horaActual);
 
 	boolean existsBySala_IdAndEstado(Long salaId, EstadoReserva estado);
+
+	/** Devuelve reservas activas de una sala/fecha excluyendo explícitamente un ID dado (uso en editar). */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r
+		WHERE r.sala.id = :salaId
+		  AND r.fecha   = :fecha
+		  AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
+		  AND r.id     <> :excludeId
+	""")
+	List<Reserva> findOtrasActivasPorSalaYFecha(
+		@org.springframework.data.repository.query.Param("salaId")    Long salaId,
+		@org.springframework.data.repository.query.Param("fecha")     LocalDate fecha,
+		@org.springframework.data.repository.query.Param("excludeId") Long excludeId
+	);
 }
 

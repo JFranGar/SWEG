@@ -232,20 +232,25 @@ public class ReservaController {
 					+ ") supera la capacidad máxima de la sala (" + salaNueva.getCapacidadMaxima() + ")");
 		}
 
+		// Validar el nuevo rango antes de modificar la entidad
+		Reserva check = Reserva.deConsulta(salaNueva, req.getFecha(), req.getHoraInicio(), req.getHoraFin());
+		check.validarRangoHorario();
+
+		validarReglas(req.getFecha(), req.getHoraInicio(), req.getHoraFin());
+
+		// Buscar conflictos excluyendo a nivel SQL la propia reserva (evita falsos positivos por caché JPA)
+		var candidatas = reservaRepository.findOtrasActivasPorSalaYFecha(req.getSalaId(), req.getFecha(), id);
+		for (Reserva candidata : candidatas) {
+			if (check.seSolapaCon(candidata)) throw new ConflictoException("La sala ya está reservada en ese horario");
+		}
+
+		// Aplicar los cambios y persistir
 		r.setSala(salaNueva);
 		r.setFecha(req.getFecha());
 		r.setHoraInicio(req.getHoraInicio());
 		r.setHoraFin(req.getHoraFin());
 		r.setCantidadPersonas(req.getCantidadPersonas());
 		r.validarTodo();
-
-		validarReglas(req.getFecha(), req.getHoraInicio(), req.getHoraFin());
-
-		var candidatas = reservaRepository.findBySala_IdAndFechaAndEstadoNot(req.getSalaId(), req.getFecha(), EstadoReserva.CANCELADA);
-		for (Reserva candidata : candidatas) {
-			if (candidata.getId().equals(id)) continue;
-			if (r.seSolapaCon(candidata)) throw new ConflictoException("La sala ya está reservada en ese horario");
-		}
 
 		return ResponseEntity.ok(ReservaResponse.de(reservaRepository.save(r)));
 	}

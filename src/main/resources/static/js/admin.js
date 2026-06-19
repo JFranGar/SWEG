@@ -18,10 +18,26 @@
     modalExitoAdmin.showModal();
   }
 
+  /* ── Modal confirmación ── */
+  const modalConfirmar = document.getElementById('modal-confirmar');
+  let confirmarCb = null;
+  document.getElementById('modal-confirmar-si').addEventListener('click', () => {
+    modalConfirmar.close();
+    if (confirmarCb) { confirmarCb(); confirmarCb = null; }
+  });
+  document.getElementById('modal-confirmar-no').addEventListener('click', () => {
+    modalConfirmar.close();
+    confirmarCb = null;
+  });
+  function confirmar(msg, cb) {
+    document.getElementById('modal-confirmar-msg').textContent = msg;
+    confirmarCb = cb;
+    modalConfirmar.showModal();
+  }
+
   /* ── Estado de paginación ── */
   let listaSalas = [],    pagSalas = 0;
   let listaUsuarios = [], pagUsuarios = 0;
-  let listaHorario = [],  pagHorario = 0;
 
   /* ── Helpers ── */
   function esc(s) {
@@ -39,11 +55,11 @@
 
   /* ── Navegación ── */
   function mostrarSeccion(sec) {
-    ['salas', 'usuarios', 'horario'].forEach(s => {
+    ['salas', 'usuarios'].forEach(s => {
       document.getElementById('section-' + s).style.display = s === sec ? '' : 'none';
       document.getElementById('nav-' + s).classList.toggle('active', s === sec);
     });
-    const titulos = { salas: 'Gestión de Salas', usuarios: 'Gestión de Usuarios', horario: 'Horario Comercial' };
+    const titulos = { salas: 'Gestión de Salas', usuarios: 'Gestión de Usuarios' };
     document.getElementById('main-title').textContent = titulos[sec];
   }
 
@@ -51,10 +67,6 @@
   document.getElementById('nav-usuarios').addEventListener('click', e => {
     e.preventDefault(); mostrarSeccion('usuarios');
     if (!listaUsuarios.length) cargarUsuarios();
-  });
-  document.getElementById('nav-horario').addEventListener('click', e => {
-    e.preventDefault(); mostrarSeccion('horario');
-    if (!listaHorario.length) cargarHorario();
   });
 
   /* ══════════════════════════════
@@ -167,12 +179,14 @@
       const sala = listaSalas.find(s => String(s.id) === String(btn.dataset.salaId));
       if (sala) abrirModalSala(sala);
     } else if (btn.dataset.delSala) {
-      if (!confirm('¿Eliminar esta sala? Esta acción no se puede deshacer.')) return;
-      try {
-        await api.del('/api/admin/salas/' + btn.dataset.delSala);
-        await cargarSalas();
-        mostrarExito('Sala eliminada correctamente');
-      } catch (err) { toast.error(err.message || 'Error al eliminar'); }
+      const idSala = btn.dataset.delSala;
+      confirmar('¿Estás seguro de que deseas eliminar esta sala? Esta acción no se puede deshacer.', async () => {
+        try {
+          await api.del('/api/admin/salas/' + idSala);
+          await cargarSalas();
+          mostrarExito('Sala eliminada correctamente');
+        } catch (err) { toast.error(err.message || 'Error al eliminar'); }
+      });
     }
   });
 
@@ -294,162 +308,14 @@
       const u = listaUsuarios.find(x => String(x.id) === String(btn.dataset.usuarioId));
       if (u) abrirModalUsuario(u);
     } else if (btn.dataset.delUsuario) {
-      if (!confirm('¿Eliminar usuario? Esta acción no se puede deshacer.')) return;
-      try {
-        await api.del('/api/admin/usuarios/' + btn.dataset.delUsuario);
-        await cargarUsuarios();
-        mostrarExito('Usuario eliminado correctamente');
-      } catch (err) { toast.error(err.message || 'No se pudo eliminar'); }
-    }
-  });
-
-  /* ══════════════════════════════
-     SECCIÓN HORARIO COMERCIAL
-  ══════════════════════════════ */
-  const modalHorario = document.getElementById('modal-horario');
-  const formHorario  = document.getElementById('horario-form');
-  const hId    = document.getElementById('horario-id');
-  const hTipo  = document.getElementById('h-tipo');
-  const hIni   = document.getElementById('h-ini');
-  const hFin   = document.getElementById('h-fin');
-  const hDia   = document.getElementById('h-dia');
-  const hDesc  = document.getElementById('h-desc');
-  const hActivo = document.getElementById('h-activo');
-  const errHTipo = document.getElementById('err-h-tipo');
-  const errHIni  = document.getElementById('err-h-ini');
-  const errHFin  = document.getElementById('err-h-fin');
-
-  const DIAS_SEMANA = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
-  function horaStr(t) {
-    if (!t) return '';
-    if (Array.isArray(t)) return String(t[0]).padStart(2, '0') + ':' + String(t[1] || 0).padStart(2, '0');
-    return String(t).substring(0, 5);
-  }
-
-  function abrirModalHorario(r = null) {
-    formHorario.reset();
-    [errHTipo, errHIni, errHFin].forEach(e => e.textContent = '');
-    [hTipo, hIni, hFin].forEach(i => i.classList.remove('error'));
-    hActivo.checked = true;
-    if (r) {
-      hId.value      = r.id;
-      hTipo.value    = r.tipo;
-      hIni.value     = horaStr(r.horaInicio);
-      hFin.value     = horaStr(r.horaFin);
-      hDia.value     = r.diaSemana != null ? String(r.diaSemana) : '';
-      hDesc.value    = r.descripcion || '';
-      hActivo.checked = r.activo;
-      document.getElementById('modal-horario-title').textContent = 'Editar Regla';
-    } else {
-      hId.value = '';
-      document.getElementById('modal-horario-title').textContent = 'Nueva Regla';
-    }
-    modalHorario.showModal();
-  }
-
-  document.getElementById('btn-nueva-regla').addEventListener('click', () => abrirModalHorario());
-  document.getElementById('modal-horario-close').addEventListener('click', () => modalHorario.close());
-  document.getElementById('btn-cancelar-horario').addEventListener('click', () => modalHorario.close());
-
-  function renderHorario() {
-    const slice = listaHorario.slice(pagHorario * PAGE, (pagHorario + 1) * PAGE);
-    const tbody = document.getElementById('tabla-horario');
-    tbody.innerHTML = '';
-    if (!slice.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted)">Sin reglas registradas</td></tr>';
-      actualizarPag('horario', 0, 0);
-      return;
-    }
-    slice.forEach(r => {
-      const diaStr   = r.diaSemana != null ? (DIAS_SEMANA[r.diaSemana] || r.diaSemana) : 'Todos';
-      const activoBadge = r.activo
-        ? '<span class="badge badge-disponible" style="font-size:11px">Activo</span>'
-        : '<span class="badge badge-finalizada" style="font-size:11px">Inactivo</span>';
-      const tipoBadge = r.tipo === 'APERTURA'
-        ? '<span class="badge badge-confirmada" style="font-size:11px">APERTURA</span>'
-        : '<span class="badge badge-cancelada" style="font-size:11px">BLOQUEO</span>';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${tipoBadge}</td>
-        <td style="font-size:12px">${esc(diaStr)}</td>
-        <td>${esc(horaStr(r.horaInicio))}</td>
-        <td>${esc(horaStr(r.horaFin))}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${r.descripcion ? esc(r.descripcion) : '—'}</td>
-        <td>${activoBadge}</td>
-        <td>
-          <button data-horario-id="${r.id}" class="btn btn-secondary btn-sm">Editar</button>
-          <button data-del-horario="${r.id}" class="btn btn-danger btn-sm">Eliminar</button>
-        </td>`;
-      tbody.appendChild(tr);
-    });
-    actualizarPag('horario', pagHorario, listaHorario.length);
-  }
-
-  document.getElementById('prev-horario').addEventListener('click', () => { if (pagHorario > 0) { pagHorario--; renderHorario(); } });
-  document.getElementById('next-horario').addEventListener('click', () => { pagHorario++; renderHorario(); });
-
-  async function cargarHorario() {
-    try {
-      listaHorario = await api.get('/api/admin/horario-reglas') || [];
-      pagHorario = 0;
-      renderHorario();
-    } catch (e) { toast.error('Error cargando reglas'); }
-  }
-
-  function validarHorario() {
-    [errHTipo, errHIni, errHFin].forEach(e => e.textContent = '');
-    [hTipo, hIni, hFin].forEach(i => i.classList.remove('error'));
-    let ok = true;
-    if (!hTipo.value) { errHTipo.textContent = 'Tipo obligatorio'; hTipo.classList.add('error'); ok = false; }
-    if (!hIni.value)  { errHIni.textContent  = 'Hora inicio obligatoria'; hIni.classList.add('error'); ok = false; }
-    if (!hFin.value)  { errHFin.textContent  = 'Hora fin obligatoria'; hFin.classList.add('error'); ok = false; }
-    if (hIni.value && hFin.value && hIni.value >= hFin.value) {
-      errHIni.textContent = 'Hora inicio debe ser anterior a hora fin'; hIni.classList.add('error'); ok = false;
-    }
-    return ok;
-  }
-
-  formHorario.addEventListener('submit', async function (e) {
-    e.preventDefault();
-    if (!validarHorario()) return;
-    const btn = document.getElementById('btn-h-guardar');
-    btn.disabled = true;
-    const payload = {
-      tipo: hTipo.value,
-      horaInicio: hIni.value + ':00',
-      horaFin: hFin.value + ':00',
-      diaSemana: hDia.value ? parseInt(hDia.value) : null,
-      descripcion: hDesc.value.trim() || null,
-      activo: hActivo.checked
-    };
-    try {
-      const msgH = hId.value ? 'Regla de horario actualizada correctamente' : 'Regla de horario creada correctamente';
-      if (hId.value) {
-        await api.put('/api/admin/horario-reglas/' + hId.value, payload);
-      } else {
-        await api.post('/api/admin/horario-reglas', payload);
-      }
-      modalHorario.close();
-      await cargarHorario();
-      mostrarExito(msgH);
-    } catch (err) { toast.error(err.message || 'Error al guardar la regla'); }
-    finally { btn.disabled = false; }
-  });
-
-  document.getElementById('tabla-horario').addEventListener('click', async function (e) {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    if (btn.dataset.horarioId) {
-      const r = listaHorario.find(x => String(x.id) === String(btn.dataset.horarioId));
-      if (r) abrirModalHorario(r);
-    } else if (btn.dataset.delHorario) {
-      if (!confirm('¿Eliminar esta regla de horario?')) return;
-      try {
-        await api.del('/api/admin/horario-reglas/' + btn.dataset.delHorario);
-        await cargarHorario();
-        mostrarExito('Regla de horario eliminada correctamente');
-      } catch (err) { toast.error(err.message || 'Error al eliminar'); }
+      const idUsuario = btn.dataset.delUsuario;
+      confirmar('¿Estás seguro de que deseas eliminar este usuario? Esta acción no se puede deshacer.', async () => {
+        try {
+          await api.del('/api/admin/usuarios/' + idUsuario);
+          await cargarUsuarios();
+          mostrarExito('Usuario eliminado correctamente');
+        } catch (err) { toast.error(err.message || 'No se pudo eliminar'); }
+      });
     }
   });
 
