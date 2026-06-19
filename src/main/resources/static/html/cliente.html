@@ -139,6 +139,16 @@
     .btn { justify-content: center; text-align: center; }
     /* Hint de capacidad */
     .capacity-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; min-height: 16px; }
+
+    /* Modal confirmación */
+    #modal-confirmar { width:min(380px,90vw); }
+    .confirmar-inner  { padding:36px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; }
+    .confirmar-icono  { font-size:44px; margin-bottom:14px; color:#ff9800; line-height:1; }
+    .confirmar-msg    { font-size:15px; font-weight:600; margin-bottom:24px; color:var(--text-primary); line-height:1.4; }
+    .confirmar-footer { display:flex; gap:10px; justify-content:center; }
+
+    /* Footer de modales — botones centrados */
+    .exito-inner { display:flex; flex-direction:column; align-items:center; }
   </style>
 </head>
 <body>
@@ -208,8 +218,6 @@
               <div class="tl-legend">
                 <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
                 <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
-                <span><span class="tl-leg-dot" style="background:rgba(255,165,0,0.45)"></span>Bloqueado</span>
-                <span><span class="tl-leg-dot" style="background:rgba(60,60,60,0.6)"></span>Cerrado</span>
                 <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Hora pasada</span>
                 <span><span class="tl-leg-dot" style="background:rgba(68,136,255,0.4)"></span>Tu selección</span>
               </div>
@@ -300,13 +308,23 @@
           <div class="tl-legend" style="font-size:10px;margin-top:8px">
             <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
             <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
-            <span><span class="tl-leg-dot" style="background:rgba(255,165,0,0.45)"></span>Bloqueado</span>
-            <span><span class="tl-leg-dot" style="background:rgba(60,60,60,0.6)"></span>Cerrado</span>
             <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Pasado</span>
           </div>
         </div>
       </div>
 
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL CONFIRMACIÓN ══ -->
+  <dialog id="modal-confirmar">
+    <div class="confirmar-inner">
+      <div class="confirmar-icono">⚠</div>
+      <div id="modal-confirmar-msg" class="confirmar-msg">¿Estás seguro de realizar esta acción?</div>
+      <div class="confirmar-footer">
+        <button id="modal-confirmar-si" class="btn btn-danger">Sí, cancelar</button>
+        <button id="modal-confirmar-no" class="btn btn-secondary">No, volver</button>
+      </div>
     </div>
   </dialog>
 

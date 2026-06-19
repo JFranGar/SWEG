@@ -35,7 +35,7 @@
   const pageInfo   = document.getElementById('page-info');
   let paginaActual = 0;
   const PAGE_SIZE  = 10;
-  let reservasMap  = {};   // id → reserva completa (para editar)
+  let reservasMap  = {};
 
   /* ── Refs Timeline principal ── */
   const tlWrap        = document.getElementById('tl-wrap');
@@ -71,17 +71,32 @@
     modalExito.showModal();
   }
 
+  /* ── Refs Modal Confirmación ── */
+  const modalConfirmar = document.getElementById('modal-confirmar');
+  let confirmarCb = null;
+  document.getElementById('modal-confirmar-si').addEventListener('click', () => {
+    modalConfirmar.close();
+    if (confirmarCb) { confirmarCb(); confirmarCb = null; }
+  });
+  document.getElementById('modal-confirmar-no').addEventListener('click', () => {
+    modalConfirmar.close();
+    confirmarCb = null;
+  });
+  function confirmar(msg, cb) {
+    document.getElementById('modal-confirmar-msg').textContent = msg;
+    confirmarCb = cb;
+    modalConfirmar.showModal();
+  }
+
   document.getElementById('modal-editar-close').addEventListener('click', () => modalEditar.close());
   document.getElementById('btn-editar-cancelar').addEventListener('click', () => modalEditar.close());
 
-  /* ── Caché de reglas ── */
-  let reglasCache = [];
-
   /* ══════════════════════════════
      TIMELINE VERTICAL
+     Horario fijo: 07:00 – 22:00
   ══════════════════════════════ */
-  let TL_H_INI = 7;
-  let TL_H_FIN = 23;
+  const TL_H_INI = 7;
+  const TL_H_FIN = 22;
   let tlSelStart = null;
   let tlSelEnd   = null;
 
@@ -91,49 +106,36 @@
     return (p[0] || 0) * 60 + (p[1] || 0);
   }
 
-  function actualizarRangoTimeline(reglas) {
-    const aps = reglas.filter(r => r.tipo === 'APERTURA');
-    if (!aps.length) { TL_H_INI = 7; TL_H_FIN = 23; return; }
-    TL_H_INI = Math.min(...aps.map(r => Math.floor(parseMins(r.horaInicio) / 60)));
-    TL_H_FIN = Math.max(...aps.map(r => Math.ceil (parseMins(r.horaFin)    / 60)));
-    if (TL_H_FIN <= TL_H_INI) { TL_H_INI = 7; TL_H_FIN = 23; }
-  }
-
   function slotToTime(idx) {
     const m = TL_H_INI * 60 + idx * 30;
     return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
   }
 
-  function clasificarSlot(idx, reservas, reglas, diaSemana, nowMins, isToday) {
+  /* Usa fecha local del dispositivo para evitar desfase UTC */
+  function localDateStr() {
+    const d = new Date();
+    return d.getFullYear() + '-'
+      + String(d.getMonth() + 1).padStart(2, '0') + '-'
+      + String(d.getDate()).padStart(2, '0');
+  }
+
+  function clasificarSlot(idx, reservas, nowMins, isToday) {
     const sMin = TL_H_INI * 60 + idx * 30;
     const eMin = sMin + 30;
     if (isToday && eMin <= nowMins) return 'pasado';
-    const aps = reglas.filter(r => r.tipo === 'APERTURA' && (r.diaSemana == null || r.diaSemana === diaSemana));
-    if (aps.length) {
-      const dentro = aps.some(r => sMin >= parseMins(r.horaInicio) && eMin <= parseMins(r.horaFin));
-      if (!dentro) return 'cerrado';
-    }
-    if (reglas.some(r => {
-      if (r.tipo !== 'BLOQUEO') return false;
-      if (r.diaSemana != null && r.diaSemana !== diaSemana) return false;
-      return sMin < parseMins(r.horaFin) && parseMins(r.horaInicio) < eMin;
-    })) return 'bloqueado';
     if (reservas.some(r => sMin < parseMins(r.horaFin) && parseMins(r.horaInicio) < eMin)) return 'ocupado';
     return 'libre';
   }
 
-  const ESTADO_LABEL = {
-    libre: 'Libre', ocupado: 'Ocupado', bloqueado: 'Bloqueado', cerrado: 'Cerrado', pasado: 'Hora pasada'
-  };
+  const ESTADO_LABEL = { libre: 'Libre', ocupado: 'Ocupado', pasado: 'Hora pasada' };
 
-  function renderTimelineEn(containerEl, reservas, reglas, fecha, onClickSlot) {
+  function renderTimelineEn(containerEl, reservas, fecha, onClickSlot) {
     containerEl.innerHTML = '';
-    const diaSemana = fecha ? (new Date(fecha + 'T00:00:00').getDay() || 7) : null;
-    const hoy       = new Date().toISOString().split('T')[0];
-    const isToday   = fecha === hoy;
-    const now       = new Date();
-    const nowMins   = now.getHours() * 60 + now.getMinutes();
-    const TL_SLOTS  = (TL_H_FIN - TL_H_INI) * 2;
+    const hoy     = localDateStr();
+    const isToday = fecha === hoy;
+    const now     = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const TL_SLOTS = (TL_H_FIN - TL_H_INI) * 2;
 
     for (let i = 0; i <= TL_SLOTS; i++) {
       const isEnd = i === TL_SLOTS;
@@ -146,7 +148,7 @@
       row.appendChild(timeEl);
 
       if (!isEnd) {
-        const estado = clasificarSlot(i, reservas, reglas, diaSemana, nowMins, isToday);
+        const estado = clasificarSlot(i, reservas, nowMins, isToday);
         const bar    = document.createElement('div');
         bar.className   = 'tl-row-bar ' + estado;
         bar.textContent = ESTADO_LABEL[estado] || estado;
@@ -172,9 +174,9 @@
     });
   }
 
-  function renderTimeline(reservas, reglas, fecha) {
+  function renderTimeline(reservas, fecha) {
     tlSelStart = null; tlSelEnd = null;
-    renderTimelineEn(tlRowsEl, reservas, reglas, fecha, idx => {
+    renderTimelineEn(tlRowsEl, reservas, fecha, idx => {
       if (tlSelStart === null || tlSelEnd !== null) {
         tlSelStart = idx; tlSelEnd = null;
       } else {
@@ -188,7 +190,7 @@
       actualizarResaltado();
     });
     requestAnimationFrame(() => {
-      const primer = tlRowsEl.querySelector('.tl-row-bar.libre, .tl-row-bar.ocupado, .tl-row-bar.bloqueado');
+      const primer = tlRowsEl.querySelector('.tl-row-bar.libre, .tl-row-bar.ocupado');
       if (primer) primer.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   }
@@ -201,13 +203,8 @@
     tlPlaceholder.textContent   = 'Seleccione una sala y fecha para ver la disponibilidad.';
     if (!salaId || !fecha) return;
     try {
-      const [reservas, reglas] = await Promise.all([
-        api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`),
-        api.get('/api/reservas/reglas-activas').catch(() => [])
-      ]);
-      reglasCache = reglas || [];
-      actualizarRangoTimeline(reglasCache);
-      renderTimeline(reservas || [], reglasCache, fecha);
+      const reservas = await api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`);
+      renderTimeline(reservas || [], fecha);
       tlPlaceholder.style.display = 'none';
       tlWrap.style.display        = 'block';
     } catch {
@@ -231,13 +228,8 @@
     if (!salaId || !fecha) { ph.textContent = 'Selecciona sala y fecha para ver disponibilidad'; return; }
     ph.textContent = 'Cargando…';
     try {
-      const [reservas, reglas] = await Promise.all([
-        api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`),
-        api.get('/api/reservas/reglas-activas').catch(() => [])
-      ]);
-      reglasCache = reglas || [];
-      actualizarRangoTimeline(reglasCache);
-      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], reglasCache, fecha, null);
+      const reservas = await api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`);
+      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], fecha, null);
       ph.style.display   = 'none';
       wrap.style.display = 'block';
     } catch {
@@ -337,11 +329,13 @@
     const btn = e.target.closest('button');
     if (!btn) return;
     if (btn.dataset.cancel) {
-      if (!confirm('¿Cancelar esta reserva? Esta acción no se puede deshacer.')) return;
-      try {
-        await api.patch('/api/reservas/' + btn.dataset.cancel + '/cancelar');
-        mostrarExito('Reserva cancelada correctamente', () => cargarMisReservas(paginaActual));
-      } catch (err) { toast.error(err.message || 'Error al cancelar'); }
+      const idReserva = btn.dataset.cancel;
+      confirmar('¿Estás seguro de que deseas cancelar esta reserva? Esta acción no se puede deshacer.', async () => {
+        try {
+          await api.patch('/api/reservas/' + idReserva + '/cancelar');
+          mostrarExito('Reserva cancelada correctamente', () => cargarMisReservas(paginaActual));
+        } catch (err) { toast.error(err.message || 'Error al cancelar'); }
+      });
     } else if (btn.dataset.editar) {
       abrirModalEditar(btn.dataset.editar);
     }
@@ -360,7 +354,7 @@
     editarFin.value      = String(r.horaFin).substring(0, 5);
     editarCantidad.value = r.cantidadPersonas != null ? r.cantidadPersonas : '';
     if (r.sala) editarSala.value = r.sala.id;
-    editarFecha.min = hoyStr();
+    editarFecha.min = localDateStr();
 
     actualizarHintCapacidadEditar();
 
@@ -376,7 +370,7 @@
     [errEditSala, errEditCantidad, errEditFecha, errEditInicio, errEditFin].forEach(e => e.textContent = '');
     [editarSala, editarCantidad, editarFecha, editarInicio, editarFin].forEach(i => i.classList.remove('error'));
     let ok = true;
-    const hoy  = hoyStr();
+    const hoy  = localDateStr();
     const sala = salaSeleccionada(editarSala.value);
 
     if (!editarSala.value) { errEditSala.textContent = 'Seleccione una sala'; editarSala.classList.add('error'); ok = false; }
@@ -388,21 +382,19 @@
       errEditCantidad.textContent = `Supera la capacidad máxima (${sala.capacidadMaxima})`; editarCantidad.classList.add('error'); ok = false;
     }
 
-    if (!editarFecha.value)  { errEditFecha.textContent  = 'Fecha obligatoria'; editarFecha.classList.add('error'); ok = false; }
+    if (!editarFecha.value) { errEditFecha.textContent = 'Fecha obligatoria'; editarFecha.classList.add('error'); ok = false; }
     else if (editarFecha.value < hoy) { errEditFecha.textContent = 'No puede ser anterior a hoy'; editarFecha.classList.add('error'); ok = false; }
     if (!editarInicio.value) { errEditInicio.textContent = 'Hora inicio obligatoria'; editarInicio.classList.add('error'); ok = false; }
     if (!editarFin.value)    { errEditFin.textContent    = 'Hora fin obligatoria';    editarFin.classList.add('error');    ok = false; }
     if (editarInicio.value && editarFin.value && editarInicio.value >= editarFin.value) {
       errEditInicio.textContent = 'Hora inicio debe ser anterior a hora fin'; editarInicio.classList.add('error'); ok = false;
     }
-    if (ok && reglasCache.length > 0 && editarFecha.value && editarInicio.value && editarFin.value) {
+    if (ok && editarInicio.value && editarFin.value) {
       const iniM = parseMins(editarInicio.value + ':00');
       const finM = parseMins(editarFin.value    + ':00');
-      const dia  = new Date(editarFecha.value + 'T00:00:00').getDay() || 7;
-      const aps  = reglasCache.filter(r => r.tipo === 'APERTURA' && (r.diaSemana == null || r.diaSemana === dia));
-      if (aps.length) {
-        const dentro = aps.some(r => iniM >= parseMins(r.horaInicio) && finM <= parseMins(r.horaFin));
-        if (!dentro) { errEditInicio.textContent = 'Fuera del horario comercial permitido'; editarInicio.classList.add('error'); ok = false; }
+      if (iniM < TL_H_INI * 60 || finM > TL_H_FIN * 60) {
+        errEditInicio.textContent = `El horario debe estar entre ${slotToTime(0)} y ${String(TL_H_FIN).padStart(2,'0')}:00`;
+        editarInicio.classList.add('error'); ok = false;
       }
     }
     return ok;
@@ -444,8 +436,6 @@
   /* ══════════════════════════════
      FORMULARIO NUEVA RESERVA
   ══════════════════════════════ */
-  function hoyStr() { return new Date().toISOString().split('T')[0]; }
-
   function limpiarErrores() {
     [errSala, errCantidad, errFecha, errInicio, errFin].forEach(e => e.textContent = '');
     [selSala, inpCantidad, inpFecha, horaInicio, horaFin].forEach(i => i.classList.remove('error'));
@@ -454,7 +444,7 @@
   function validar() {
     limpiarErrores();
     let ok = true;
-    const hoy  = hoyStr();
+    const hoy  = localDateStr();
     const sala = salaSeleccionada(selSala.value);
 
     if (!selSala.value) { errSala.textContent = 'Seleccione una sala'; selSala.classList.add('error'); ok = false; }
@@ -473,14 +463,12 @@
     if (horaInicio.value && horaFin.value && horaInicio.value >= horaFin.value) {
       errInicio.textContent = 'Hora inicio debe ser anterior a hora fin'; horaInicio.classList.add('error'); ok = false;
     }
-    if (ok && reglasCache.length > 0 && inpFecha.value && horaInicio.value && horaFin.value) {
+    if (ok && horaInicio.value && horaFin.value) {
       const iniM = parseMins(horaInicio.value + ':00');
       const finM = parseMins(horaFin.value    + ':00');
-      const dia  = new Date(inpFecha.value + 'T00:00:00').getDay() || 7;
-      const aps  = reglasCache.filter(r => r.tipo === 'APERTURA' && (r.diaSemana == null || r.diaSemana === dia));
-      if (aps.length) {
-        const dentro = aps.some(r => iniM >= parseMins(r.horaInicio) && finM <= parseMins(r.horaFin));
-        if (!dentro) { errInicio.textContent = 'Fuera del horario comercial permitido'; horaInicio.classList.add('error'); ok = false; }
+      if (iniM < TL_H_INI * 60 || finM > TL_H_FIN * 60) {
+        errInicio.textContent = `El horario debe estar entre ${slotToTime(0)} y ${String(TL_H_FIN).padStart(2,'0')}:00`;
+        horaInicio.classList.add('error'); ok = false;
       }
     }
     return ok;
@@ -500,7 +488,7 @@
       });
       mostrarExito('Reserva creada correctamente', () => {
         document.getElementById('reserva-form').reset();
-        inpFecha.min            = hoyStr();
+        inpFecha.min            = localDateStr();
         capacityHint.textContent = '';
         tlWrap.style.display        = 'none';
         tlPlaceholder.style.display = 'block';
@@ -526,7 +514,7 @@
   });
 
   /* ── Init ── */
-  inpFecha.min    = hoyStr();
-  editarFecha.min = hoyStr();
+  inpFecha.min    = localDateStr();
+  editarFecha.min = localDateStr();
   await cargarSalas();
 })();
