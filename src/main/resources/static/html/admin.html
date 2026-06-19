@@ -7,42 +7,241 @@
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    .section-bar { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .section-bar h3 { font-size:13px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.6px; margin:0; }
+    .pagination { display:flex; align-items:center; gap:10px; margin-top:12px; }
+    .pagination button { min-width:80px; }
+    .page-info { font-size:12px; color:var(--text-muted); }
+    .btn-sm { padding:6px 12px; font-size:12px; }
+    /* Modal — centrado explícito para todos los navegadores */
+    dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 0;
+      width: min(480px, 92vw);
+      color: var(--text-primary);
+    }
+    dialog::backdrop { background:rgba(0,0,0,0.72); backdrop-filter:blur(3px); }
+    .modal-inner { padding:24px; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; }
+    .modal-title { font-weight:700; color:var(--gold); font-size:15px; }
+    .btn-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:22px; line-height:1; padding:2px 6px; border-radius:4px; }
+    .btn-close:hover { color:var(--text-primary); background:rgba(255,255,255,0.05); }
+    .modal-footer { display:flex; gap:8px; margin-top:18px; }
+    /* Modal éxito */
+    #modal-exito-admin { width:min(340px,90vw); }
+    .exito-inner-a { padding:36px 32px; text-align:center; }
+    .exito-icono-a { font-size:48px; margin-bottom:14px; color:#00c851; line-height:1; }
+    .exito-msg-a   { font-size:15px; font-weight:600; margin-bottom:22px; color:var(--text-primary); line-height:1.4; }
+  </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
-        <a class="active" href="#">Gestión de Salas</a>
+        <a id="nav-salas" class="active" href="#">Gestión de Salas</a>
+        <a id="nav-usuarios" href="#">Gestión de Usuarios</a>
+        <a id="nav-horario" href="#">Horario Comercial</a>
       </nav>
-      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
+      <div class="sidebar-footer">
+        <div id="user-rol" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
+        <button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button>
+      </div>
     </aside>
     <main class="main container">
-      <div class="main-header"><h2>Inventario de Salas</h2><div id="user-rol" class="user-chip"></div></div>
+      <div class="main-header"><h2 id="main-title">Gestión de Salas</h2></div>
 
-      <div class="card" style="margin-bottom:18px">
-        <div class="card-title" id="form-title">Nueva Sala</div>
-        <form id="sala-form">
-          <input type="hidden" id="sala-id">
-          <div class="field"><label>Nombre</label><input id="nombre" class="input"><div id="err-nombre" class="error-msg"></div></div>
-          <div class="field"><label>Tipo</label><select id="tipo" class="select"><option value="">Seleccione...</option><option value="REUNION">REUNION</option><option value="SEMINARIO">SEMINARIO</option><option value="TRABAJO">TRABAJO</option></select><div id="err-tipo" class="error-msg"></div></div>
-          <div class="field"><label>Capacidad</label><input id="capacidad" type="number" min="1" class="input"><div id="err-capacidad" class="error-msg"></div></div>
-          <div style="display:flex;gap:8px"><button id="btn-guardar" class="btn btn-primary">Guardar</button><button id="btn-cancelar" type="button" class="btn btn-secondary" style="display:none">Cancelar</button></div>
-        </form>
+      <!-- ══ SECCIÓN SALAS ══ -->
+      <div id="section-salas">
+        <div class="section-bar">
+          <h3>Salas registradas</h3>
+          <button id="btn-nueva-sala" class="btn btn-primary btn-sm">+ Nueva Sala</button>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-salas"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="prev-salas" class="btn btn-secondary btn-sm" disabled>‹ Anterior</button>
+            <span id="info-salas" class="page-info"></span>
+            <button id="next-salas" class="btn btn-secondary btn-sm" disabled>Siguiente ›</button>
+          </div>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Salas registradas</div>
-        <table class="table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Capacidad</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody id="tabla-salas"></tbody></table>
+      <!-- ══ SECCIÓN USUARIOS ══ -->
+      <div id="section-usuarios" style="display:none">
+        <div class="section-bar">
+          <h3>Usuarios registrados</h3>
+          <button id="btn-nuevo-usuario" class="btn btn-primary btn-sm">+ Nuevo Usuario</button>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Último login</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-usuarios"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="prev-usuarios" class="btn btn-secondary btn-sm" disabled>‹ Anterior</button>
+            <span id="info-usuarios" class="page-info"></span>
+            <button id="next-usuarios" class="btn btn-secondary btn-sm" disabled>Siguiente ›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SECCIÓN HORARIO ══ -->
+      <div id="section-horario" style="display:none">
+        <div class="section-bar">
+          <h3>Reglas de horario comercial</h3>
+          <button id="btn-nueva-regla" class="btn btn-primary btn-sm">+ Nueva Regla</button>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Tipo</th><th>Día</th><th>Inicio</th><th>Fin</th><th>Descripción</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-horario"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="prev-horario" class="btn btn-secondary btn-sm" disabled>‹ Anterior</button>
+            <span id="info-horario" class="page-info"></span>
+            <button id="next-horario" class="btn btn-secondary btn-sm" disabled>Siguiente ›</button>
+          </div>
+        </div>
       </div>
     </main>
   </div>
+
+  <!-- ══ MODAL SALA ══ -->
+  <dialog id="modal-sala">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-sala-title">Nueva Sala</span>
+        <button type="button" class="btn-close" id="modal-sala-close" aria-label="Cerrar">×</button>
+      </div>
+      <form id="sala-form">
+        <input type="hidden" id="sala-id">
+        <div class="field"><label>Nombre</label><input id="nombre" class="input" autocomplete="off"><div id="err-nombre" class="error-msg"></div></div>
+        <div class="field"><label>Tipo</label>
+          <select id="tipo" class="select">
+            <option value="">Seleccione...</option>
+            <option value="REUNION">REUNION</option>
+            <option value="SEMINARIO">SEMINARIO</option>
+            <option value="TRABAJO">TRABAJO</option>
+          </select>
+          <div id="err-tipo" class="error-msg"></div>
+        </div>
+        <div class="field"><label>Capacidad máxima</label><input id="capacidad" type="number" min="1" class="input"><div id="err-capacidad" class="error-msg"></div></div>
+        <div class="modal-footer">
+          <button id="btn-guardar" class="btn btn-primary">Guardar</button>
+          <button type="button" id="btn-cancelar-sala" class="btn btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL USUARIO ══ -->
+  <dialog id="modal-usuario">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-usuario-title">Nuevo Usuario</span>
+        <button type="button" class="btn-close" id="modal-usuario-close" aria-label="Cerrar">×</button>
+      </div>
+      <form id="usuario-form">
+        <input type="hidden" id="usuario-id">
+        <div class="field"><label>Nombre</label><input id="u-nombre" class="input" autocomplete="off"><div id="err-u-nombre" class="error-msg"></div></div>
+        <div class="field"><label>Correo</label><input id="u-correo" type="email" class="input" autocomplete="off"><div id="err-u-correo" class="error-msg"></div></div>
+        <div class="field">
+          <label>Contraseña <span style="color:var(--text-muted);font-size:11px">(vacío = no cambiar)</span></label>
+          <input id="u-contrasena" type="password" class="input" autocomplete="new-password">
+          <div id="err-u-contrasena" class="error-msg"></div>
+        </div>
+        <div class="field"><label>Rol</label>
+          <select id="u-rol" class="select">
+            <option value="">Seleccione...</option>
+            <option value="CLIENTE">CLIENTE</option>
+            <option value="RECEPCIONISTA">RECEPCIONISTA</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+          <div id="err-u-rol" class="error-msg"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-u-guardar" class="btn btn-primary">Guardar</button>
+          <button type="button" id="btn-cancelar-usuario" class="btn btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL HORARIO ══ -->
+  <dialog id="modal-horario">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title" id="modal-horario-title">Nueva Regla</span>
+        <button type="button" class="btn-close" id="modal-horario-close" aria-label="Cerrar">×</button>
+      </div>
+      <form id="horario-form">
+        <input type="hidden" id="horario-id">
+        <div class="field"><label>Tipo de regla</label>
+          <select id="h-tipo" class="select">
+            <option value="">Seleccione...</option>
+            <option value="APERTURA">APERTURA — Define horario de atención</option>
+            <option value="BLOQUEO">BLOQUEO — Bloquea un horario específico</option>
+          </select>
+          <div id="err-h-tipo" class="error-msg"></div>
+        </div>
+        <div style="display:flex;gap:12px">
+          <div style="flex:1" class="field"><label>Hora inicio</label><input id="h-ini" type="time" class="input"><div id="err-h-ini" class="error-msg"></div></div>
+          <div style="flex:1" class="field"><label>Hora fin</label><input id="h-fin" type="time" class="input"><div id="err-h-fin" class="error-msg"></div></div>
+        </div>
+        <div class="field"><label>Día de la semana</label>
+          <select id="h-dia" class="select">
+            <option value="">Todos los días</option>
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+            <option value="6">Sábado</option>
+            <option value="7">Domingo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción <span style="color:var(--text-muted);font-size:11px">(opcional)</span></label>
+          <input id="h-desc" class="input" placeholder="Ej: Horario de almuerzo" autocomplete="off">
+        </div>
+        <div class="field" style="flex-direction:row;align-items:center;gap:10px;margin-bottom:8px">
+          <input id="h-activo" type="checkbox" checked style="width:16px;height:16px;cursor:pointer;accent-color:var(--gold)">
+          <label for="h-activo" style="text-transform:none;letter-spacing:0;cursor:pointer">Regla activa</label>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-h-guardar" class="btn btn-primary">Guardar</button>
+          <button type="button" id="btn-cancelar-horario" class="btn btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL ÉXITO ADMIN ══ -->
+  <dialog id="modal-exito-admin">
+    <div class="exito-inner-a">
+      <div class="exito-icono-a">✓</div>
+      <div id="modal-exito-admin-msg" class="exito-msg-a">Operación realizada correctamente</div>
+      <button id="modal-exito-admin-ok" class="btn btn-primary" style="min-width:130px">Aceptar</button>
+    </div>
+  </dialog>
+
   <div id="toast-container"></div>
   <script src="/js/api.js"></script>
   <script src="/js/guards.js"></script>
   <script src="/js/admin.js"></script>
 </body>
 </html>
-<!-- admin.html - Placeholder Sprint 1 - HU2 -->
-<!-- TODO: implementar en el Paso 5 -->

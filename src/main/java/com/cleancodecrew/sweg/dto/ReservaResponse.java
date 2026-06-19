@@ -6,11 +6,6 @@ import java.time.LocalTime;
 
 import com.cleancodecrew.sweg.model.Reserva;
 
-/**
- * ReservaResponse
- *
- * Respuesta simplificada de reserva.
- */
 public record ReservaResponse(
         Long id,
         String mensaje,
@@ -20,12 +15,20 @@ public record ReservaResponse(
         LocalTime horaFin,
         String estado,
         LocalDateTime fechaIngreso,
-        LocalDateTime fechaCancelacion
+        LocalDateTime fechaCancelacion,
+        Integer cantidadPersonas
 ) {
     public record SalaMini(Long id, String nombre, String tipo, int capacidadMaxima) {}
 
     public static ReservaResponse de(Reserva r) {
-        SalaMini sm = new SalaMini(r.getSala().getId(), r.getSala().getNombre(), r.getSala().getTipo().name(), r.getSala().getCapacidadMaxima());
-        return new ReservaResponse(r.getId(), "", sm, r.getFecha(), r.getHoraInicio(), r.getHoraFin(), r.getEstado().name(), r.getFechaIngreso(), r.getFechaCancelacion());
+        SalaMini sm = new SalaMini(
+                r.getSala().getId(), r.getSala().getNombre(),
+                r.getSala().getTipo().name(), r.getSala().getCapacidadMaxima());
+        return new ReservaResponse(
+                r.getId(), "", sm,
+                r.getFecha(), r.getHoraInicio(), r.getHoraFin(),
+                r.getEstado().name(),
+                r.getFechaIngreso(), r.getFechaCancelacion(),
+                r.getCantidadPersonas());
     }
 }

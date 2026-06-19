@@ -26,10 +26,15 @@
 
 /* Badges */
 .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:600;font-size:12px}
-.badge-pending{background:rgba(136,136,136,0.12);color:var(--state-pending)}
-.badge-confirmed{background:rgba(68,136,255,0.08);color:var(--state-confirmed)}
-.badge-active{background:rgba(0,200,81,0.08);color:var(--state-active)}
-.badge-cancelled{background:rgba(255,68,68,0.06);color:var(--state-cancelled)}
+.badge-pending,.badge-pendiente{background:rgba(136,136,136,0.12);color:var(--state-pending)}
+.badge-confirmed,.badge-confirmada{background:rgba(68,136,255,0.08);color:var(--state-confirmed)}
+.badge-active,.badge-en_uso{background:rgba(0,200,81,0.08);color:var(--state-active)}
+.badge-cancelled,.badge-cancelada{background:rgba(255,68,68,0.06);color:var(--state-cancelled)}
+.badge-finalizada{background:rgba(136,136,136,0.08);color:#666}
+.badge-disponible{background:rgba(0,200,81,0.08);color:var(--state-active)}
+.badge-ocupada{background:rgba(255,165,0,0.12);color:#FFA500}
+.badge-mantenimiento{background:rgba(255,165,0,0.12);color:#FFA500}
+.badge-eliminada{background:rgba(255,68,68,0.06);color:var(--state-cancelled)}
 
 /* Toasts */
 #toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:10px;z-index:9999}
@@ -42,5 +47,3 @@
 /* Spinner */
 .spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,0.08);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* components.css - Placeholder Sprint 1 */
-/* TODO: implementar en el Paso 5 */

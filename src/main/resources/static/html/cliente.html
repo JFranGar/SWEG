@@ -8,52 +8,320 @@
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── Layout nueva reserva ── */
+    .reserva-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .reserva-grid { grid-template-columns: 1fr; } }
+
+    /* ══════════════════════════════
+       TIMELINE VERTICAL
+    ══════════════════════════════ */
+    .tl-scroll {
+      max-height: 390px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      scrollbar-width: thin;
+    }
+    .tl-scroll::-webkit-scrollbar { width: 5px; }
+    .tl-scroll::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
+
+    .tl-row {
+      display: flex;
+      align-items: stretch;
+      min-height: 34px;
+    }
+    .tl-row-time {
+      width: 50px;
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 8px;
+      flex-shrink: 0;
+      border-right: 1px solid var(--border-subtle);
+      background: rgba(0,0,0,0.15);
+      user-select: none;
+    }
+    .tl-row-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 11px;
+      font-weight: 500;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      letter-spacing: 0.2px;
+    }
+    /* Estados */
+    .tl-row-bar.libre     { background: rgba(0,200,81,0.08);  color: rgba(0,200,81,0.9);    cursor: pointer; }
+    .tl-row-bar.libre:hover { background: rgba(0,200,81,0.22); }
+    .tl-row-bar.ocupado   { background: rgba(255,68,68,0.13);  color: rgba(255,90,90,0.85);  cursor: not-allowed; }
+    .tl-row-bar.bloqueado { background: rgba(255,165,0,0.14);  color: rgba(255,165,0,0.85);  cursor: not-allowed; }
+    .tl-row-bar.cerrado   { background: rgba(40,40,40,0.30);   color: rgba(120,120,120,0.7); cursor: not-allowed; }
+    .tl-row-bar.pasado    { background: rgba(15,15,15,0.45);   color: rgba(80,80,80,0.65);   cursor: not-allowed; opacity: 0.6; }
+    /* Selección */
+    .tl-row-bar.sel-inicio,
+    .tl-row-bar.sel-fin,
+    .tl-row-bar.sel-rango {
+      background: rgba(68,136,255,0.22) !important;
+      color: rgba(140,185,255,1) !important;
+      outline: 1px solid rgba(68,136,255,0.45);
+    }
+    /* Fila marcadora del cierre */
+    .tl-row-end {
+      min-height: 20px;
+      background: rgba(0,0,0,0.10);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .tl-row-end .tl-row-time { border-right: 1px solid var(--border-subtle); }
+
+    /* Leyenda */
+    .tl-legend {
+      display: flex;
+      gap: 12px;
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .tl-leg-dot {
+      width: 11px; height: 11px; border-radius: 3px;
+      display: inline-block; vertical-align: middle; margin-right: 3px;
+    }
+    .tl-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+    .tl-placeholder { color: var(--text-muted); font-size: 13px; padding: 40px 0; text-align: center; }
+
+    /* ── Paginación ── */
+    .pagination { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+    .pagination button { min-width: 80px; }
+    .page-info { font-size: 12px; color: var(--text-muted); }
+
+    /* ── Diálogos: centrado explícito ── */
+    dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      margin: 0;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-soft);
+      border-radius: var(--radius);
+      padding: 0;
+      color: var(--text-primary);
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.72); backdrop-filter: blur(3px); }
+
+    /* ── Modal editar: dos columnas ── */
+    .editar-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+      padding: 24px;
+      width: min(800px, 94vw);
+    }
+    @media (max-width: 660px) { .editar-grid { grid-template-columns: 1fr; width: 92vw; } }
+
+    /* ── Modal éxito ── */
+    .exito-inner { padding: 36px 32px; text-align: center; width: min(340px, 90vw); }
+    .exito-icono { font-size: 52px; margin-bottom: 14px; color: #00c851; line-height: 1; }
+    .exito-msg   { font-size: 15px; font-weight: 600; margin-bottom: 24px; color: var(--text-primary); line-height: 1.4; }
+    /* Centrado de texto en botones flex */
+    .btn { justify-content: center; text-align: center; }
+    /* Hint de capacidad */
+    .capacity-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; min-height: 16px; }
+  </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
-        <a class="active" href="#">Nueva Reserva</a>
+        <a id="nav-reservar" class="active" href="#">Nueva Reserva</a>
+        <a id="nav-mis" href="#">Mis Reservas</a>
       </nav>
-      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
+      <div class="sidebar-footer">
+        <div id="user-correo" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
+        <button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button>
+      </div>
     </aside>
     <main class="main container">
-      <div class="main-header"><h2>Reservar Sala</h2><div id="user-correo" class="user-chip"></div></div>
 
-      <div class="card" style="max-width:520px;margin-bottom:18px">
-        <div class="card-title">Consultar Disponibilidad</div>
-        <form id="disponibilidad-form">
-          <div class="field"><label>Sala</label><select id="sala-dispo" class="select"></select><div id="err-sala-dispo" class="error-msg"></div></div>
-          <div class="field"><label>Fecha</label><input id="fecha-dispo" type="date" class="input"><div id="err-fecha-dispo" class="error-msg"></div></div>
-          <div style="display:flex;gap:12px"><div style="flex:1" class="field"><label>Hora inicio</label><input id="hora-inicio-dispo" type="time" class="input"><div id="err-hora-inicio-dispo" class="error-msg"></div></div><div style="flex:1" class="field"><label>Hora fin</label><input id="hora-fin-dispo" type="time" class="input"><div id="err-hora-fin-dispo" class="error-msg"></div></div></div>
-          <div><button id="btn-consultar" type="submit" class="btn btn-secondary">Consultar</button></div>
-        </form>
-        <div id="disponibilidad-result"></div>
+      <!-- ══ NUEVA RESERVA ══ -->
+      <div id="section-reservar">
+        <div class="main-header"><h2>Nueva Reserva</h2></div>
+        <div class="reserva-grid">
+
+          <!-- Formulario -->
+          <div class="card">
+            <div class="card-title">Datos de la reserva</div>
+            <form id="reserva-form">
+              <div class="field">
+                <label>Sala</label>
+                <select id="sala" class="select"></select>
+                <div id="err-sala" class="error-msg"></div>
+              </div>
+              <div class="field">
+                <label>Cantidad de personas</label>
+                <input id="cantidad-personas" type="number" min="1" class="input" placeholder="Ej: 5">
+                <div id="capacity-hint" class="capacity-hint"></div>
+                <div id="err-cantidad" class="error-msg"></div>
+              </div>
+              <div class="field">
+                <label>Fecha</label>
+                <input id="fecha" type="date" class="input">
+                <div id="err-fecha" class="error-msg"></div>
+              </div>
+              <div style="display:flex;gap:12px">
+                <div style="flex:1" class="field">
+                  <label>Hora inicio</label>
+                  <input id="hora-inicio" type="time" class="input">
+                  <div id="err-hora-inicio" class="error-msg"></div>
+                </div>
+                <div style="flex:1" class="field">
+                  <label>Hora fin</label>
+                  <input id="hora-fin" type="time" class="input">
+                  <div id="err-hora-fin" class="error-msg"></div>
+                </div>
+              </div>
+              <button id="btn-reservar" class="btn btn-primary full">Reservar</button>
+            </form>
+          </div>
+
+          <!-- Timeline vertical de disponibilidad -->
+          <div class="card">
+            <div class="card-title">Disponibilidad del día</div>
+            <div id="tl-placeholder" class="tl-placeholder">
+              Seleccione una sala y fecha para ver la disponibilidad.
+            </div>
+            <div id="tl-wrap" style="display:none">
+              <div id="tl-rows" class="tl-scroll"></div>
+              <div class="tl-legend">
+                <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
+                <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
+                <span><span class="tl-leg-dot" style="background:rgba(255,165,0,0.45)"></span>Bloqueado</span>
+                <span><span class="tl-leg-dot" style="background:rgba(60,60,60,0.6)"></span>Cerrado</span>
+                <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Hora pasada</span>
+                <span><span class="tl-leg-dot" style="background:rgba(68,136,255,0.4)"></span>Tu selección</span>
+              </div>
+              <p class="tl-hint">Clic en el inicio y luego en el fin para precargar las horas.</p>
+            </div>
+          </div>
+
+        </div>
       </div>
 
-      <div class="card" style="max-width:520px;margin-bottom:18px">
-        <div class="card-title">Nueva Reserva</div>
-        <form id="reserva-form">
-          <div class="field"><label>Sala</label><select id="sala" class="select"></select><div id="err-sala" class="error-msg"></div></div>
-          <div class="field"><label>Fecha</label><input id="fecha" type="date" class="input"><div id="err-fecha" class="error-msg"></div></div>
-          <div style="display:flex;gap:12px"><div style="flex:1" class="field"><label>Hora inicio</label><input id="hora-inicio" type="time" class="input"><div id="err-hora-inicio" class="error-msg"></div></div><div style="flex:1" class="field"><label>Hora fin</label><input id="hora-fin" type="time" class="input"><div id="err-hora-fin" class="error-msg"></div></div></div>
-          <div><button id="btn-reservar" class="btn btn-primary">Reservar</button></div>
-        </form>
+      <!-- ══ MIS RESERVAS ══ -->
+      <div id="section-mis" style="display:none">
+        <div class="main-header"><h2>Mis Reservas</h2></div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Sala</th><th>Fecha</th><th>Inicio</th><th>Fin</th><th>Personas</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-reservas"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="btn-prev" class="btn btn-secondary" disabled>‹ Anterior</button>
+            <span id="page-info" class="page-info"></span>
+            <button id="btn-next" class="btn btn-secondary" disabled>Siguiente ›</button>
+          </div>
+        </div>
       </div>
 
-      <div class="card">
-        <div class="card-title">Mis Reservas</div>
-        <table class="table"><thead><tr><th>Sala</th><th>Fecha</th><th>Inicio</th><th>Fin</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody id="tabla-reservas"></tbody></table>
-      </div>
     </main>
   </div>
+
+  <!-- ══ MODAL EDITAR RESERVA ══ -->
+  <dialog id="modal-editar">
+    <div class="editar-grid">
+
+      <!-- Columna izquierda: formulario -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+          <span style="font-weight:700;color:var(--gold);font-size:15px">Editar Reserva</span>
+          <button type="button" id="modal-editar-close"
+            style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:22px;line-height:1;padding:2px 6px;border-radius:4px">×</button>
+        </div>
+        <form id="editar-form">
+          <input type="hidden" id="editar-id">
+          <div class="field">
+            <label>Sala</label>
+            <select id="editar-sala" class="select"></select>
+            <div id="err-editar-sala" class="error-msg"></div>
+          </div>
+          <div class="field">
+            <label>Cantidad de personas</label>
+            <input id="editar-cantidad" type="number" min="1" class="input" placeholder="Ej: 5">
+            <div id="edit-capacity-hint" class="capacity-hint"></div>
+            <div id="err-editar-cantidad" class="error-msg"></div>
+          </div>
+          <div class="field">
+            <label>Fecha</label>
+            <input id="editar-fecha" type="date" class="input">
+            <div id="err-editar-fecha" class="error-msg"></div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <div style="flex:1" class="field">
+              <label>Hora inicio</label>
+              <input id="editar-inicio" type="time" class="input">
+              <div id="err-editar-inicio" class="error-msg"></div>
+            </div>
+            <div style="flex:1" class="field">
+              <label>Hora fin</label>
+              <input id="editar-fin" type="time" class="input">
+              <div id="err-editar-fin" class="error-msg"></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button id="btn-editar-guardar" class="btn btn-primary">Guardar cambios</button>
+            <button type="button" id="btn-editar-cancelar" class="btn btn-secondary">Cancelar</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Columna derecha: mini-timeline vertical -->
+      <div id="edit-tl-section" style="display:none">
+        <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:10px">
+          Disponibilidad del día
+        </div>
+        <div id="edit-tl-placeholder" class="tl-placeholder" style="padding:28px 0;font-size:12px">
+          Selecciona sala y fecha para ver disponibilidad
+        </div>
+        <div id="edit-tl-wrap" style="display:none">
+          <div id="edit-tl-rows" class="tl-scroll" style="max-height:330px"></div>
+          <div class="tl-legend" style="font-size:10px;margin-top:8px">
+            <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
+            <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
+            <span><span class="tl-leg-dot" style="background:rgba(255,165,0,0.45)"></span>Bloqueado</span>
+            <span><span class="tl-leg-dot" style="background:rgba(60,60,60,0.6)"></span>Cerrado</span>
+            <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Pasado</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL ÉXITO ══ -->
+  <dialog id="modal-exito">
+    <div class="exito-inner">
+      <div class="exito-icono">✓</div>
+      <div id="modal-exito-msg" class="exito-msg">Operación realizada correctamente</div>
+      <button id="modal-exito-ok" class="btn btn-primary" style="min-width:130px">Aceptar</button>
+    </div>
+  </dialog>
+
   <div id="toast-container"></div>
   <script src="/js/api.js"></script>
   <script src="/js/guards.js"></script>
   <script src="/js/cliente.js"></script>
 </body>
 </html>
-<!-- cliente.html - Placeholder Sprint 1 - HU4 -->
-<!-- TODO: implementar en el Paso 5 -->
