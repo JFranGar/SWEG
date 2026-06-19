@@ -59,6 +59,9 @@ public class Reserva {
     @Column(name = "fecha_ingreso")
     private LocalDateTime fechaIngreso;
 
+    @Column(name = "fecha_salida")
+    private LocalDateTime fechaSalida;
+
     @Column(name = "cantidad_personas")
     private Integer cantidadPersonas;
 
@@ -138,6 +141,23 @@ public class Reserva {
         }
         if (ahora.isAfter(fin)) {
             throw new IllegalStateException("La reserva ya finalizo");
+        }
+    }
+
+    /**
+     * CA-HU08-01,03,04: Registra la salida del cliente.
+     * Cambia la reserva a FINALIZADA y la sala a DISPONIBLE o EN_LIMPIEZA.
+     */
+    public void registrarSalida(boolean requiereLimpieza, LocalDateTime ahora) {
+        if (this.estado != EstadoReserva.EN_USO) {
+            throw new IllegalStateException("Solo reservas en uso pueden registrar salida");
+        }
+        this.estado = EstadoReserva.FINALIZADA;
+        this.fechaSalida = ahora;
+        if (requiereLimpieza) {
+            this.sala.marcarEnLimpieza();
+        } else {
+            this.sala.marcarDisponible();
         }
     }
 

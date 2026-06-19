@@ -38,7 +38,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 			AND r.fecha = :fecha
 			AND r.estado IN (
 				com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE,
-				com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA
+				com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+				com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
 			)
 		 ORDER BY r.horaInicio ASC
 	 """)
@@ -87,5 +88,41 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 		@org.springframework.data.repository.query.Param("fecha")     LocalDate fecha,
 		@org.springframework.data.repository.query.Param("excludeId") Long excludeId
 	);
+
+	/** CA-HU03-01: IDs de salas con reservas que se solapan con el horario solicitado. */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT DISTINCT r.sala.id FROM Reserva r
+		WHERE r.fecha = :fecha
+		  AND r.estado NOT IN (
+		      com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA,
+		      com.cleancodecrew.sweg.model.EstadoReserva.FINALIZADA
+		  )
+		  AND r.horaInicio < :horaFin
+		  AND r.horaFin > :horaInicio
+	""")
+	List<Long> findSalaIdsConReservaEnHorario(
+		@org.springframework.data.repository.query.Param("fecha")      LocalDate fecha,
+		@org.springframework.data.repository.query.Param("horaInicio") LocalTime horaInicio,
+		@org.springframework.data.repository.query.Param("horaFin")    LocalTime horaFin
+	);
+
+	/** CA-HU09-02: Reservas CONFIRMADA/PENDIENTE hoy (salas "Reservadas" en el panel). */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r JOIN FETCH r.sala
+		WHERE r.estado IN (
+		    com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+		    com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
+		)
+		AND r.fecha = :hoy
+	""")
+	List<Reserva> findActivasHoy(@org.springframework.data.repository.query.Param("hoy") LocalDate hoy);
+
+	/** CA-HU08-01: Todas las reservas actualmente EN_USO (para vista recepcionista). */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+		WHERE r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+		ORDER BY r.sala.nombre ASC
+	""")
+	List<Reserva> findTodasEnUso();
 }
 

@@ -5,12 +5,15 @@
 
   /* ── Navegación ── */
   function mostrarSeccion(sec) {
-    document.getElementById('section-reservar').style.display = sec === 'reservar' ? '' : 'none';
-    document.getElementById('section-mis').style.display      = sec === 'mis'      ? '' : 'none';
-    document.getElementById('nav-reservar').classList.toggle('active', sec === 'reservar');
-    document.getElementById('nav-mis').classList.toggle('active',      sec === 'mis');
+    document.getElementById('section-buscar-salas').style.display = sec === 'buscar-salas' ? '' : 'none';
+    document.getElementById('section-reservar').style.display     = sec === 'reservar'     ? '' : 'none';
+    document.getElementById('section-mis').style.display          = sec === 'mis'          ? '' : 'none';
+    document.getElementById('nav-buscar-salas').classList.toggle('active', sec === 'buscar-salas');
+    document.getElementById('nav-reservar').classList.toggle('active',     sec === 'reservar');
+    document.getElementById('nav-mis').classList.toggle('active',          sec === 'mis');
     if (sec === 'mis') cargarMisReservas(0);
   }
+  document.getElementById('nav-buscar-salas').addEventListener('click', e => { e.preventDefault(); mostrarSeccion('buscar-salas'); });
   document.getElementById('nav-reservar').addEventListener('click', e => { e.preventDefault(); mostrarSeccion('reservar'); });
   document.getElementById('nav-mis').addEventListener('click',      e => { e.preventDefault(); mostrarSeccion('mis'); });
 
@@ -531,6 +534,125 @@
         toast.error(err.message || 'Error al crear la reserva');
       }
     } finally { btnReservar.disabled = false; }
+  });
+
+  /* ══════════════════════════════
+     BUSCAR SALAS DISPONIBLES — HU03
+  ══════════════════════════════ */
+  const buscarSalasForm = document.getElementById('buscar-salas-form');
+  const filtroFecha     = document.getElementById('filtro-fecha');
+  const filtroInicio    = document.getElementById('filtro-inicio');
+  const filtroFin       = document.getElementById('filtro-fin');
+  const filtroTipo      = document.getElementById('filtro-tipo');
+  const buscarResultados = document.getElementById('buscar-salas-resultados');
+
+  filtroFecha.min = localDateStr();
+
+  const TIPO_LABEL = { REUNION: 'Reunión', SEMINARIO: 'Seminario', TRABAJO: 'Trabajo' };
+
+  function limpiarErroresBuscar() {
+    ['err-filtro-fecha', 'err-filtro-inicio', 'err-filtro-fin'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '';
+    });
+    ['filtro-fecha', 'filtro-inicio', 'filtro-fin'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('error');
+    });
+  }
+
+  function validarBuscarSalas() {
+    limpiarErroresBuscar();
+    const hoy = localDateStr();
+    let ok = true;
+
+    if (!filtroFecha.value) {
+      document.getElementById('err-filtro-fecha').textContent = 'La fecha es obligatoria';
+      filtroFecha.classList.add('error'); ok = false;
+    } else if (filtroFecha.value < hoy) {
+      document.getElementById('err-filtro-fecha').textContent = 'No se permiten fechas pasadas';
+      filtroFecha.classList.add('error'); ok = false;
+    }
+    if (!filtroInicio.value) {
+      document.getElementById('err-filtro-inicio').textContent = 'Hora inicio obligatoria';
+      filtroInicio.classList.add('error'); ok = false;
+    }
+    if (!filtroFin.value) {
+      document.getElementById('err-filtro-fin').textContent = 'Hora fin obligatoria';
+      filtroFin.classList.add('error'); ok = false;
+    }
+    if (filtroInicio.value && filtroFin.value && filtroInicio.value >= filtroFin.value) {
+      document.getElementById('err-filtro-inicio').textContent = 'La hora inicio debe ser menor a la hora fin';
+      filtroInicio.classList.add('error'); ok = false;
+    }
+    return ok;
+  }
+
+  buscarSalasForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!validarBuscarSalas()) return;
+
+    buscarResultados.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Buscando...</div>';
+    const btn = buscarSalasForm.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    try {
+      const params = new URLSearchParams({
+        fecha:      filtroFecha.value,
+        horaInicio: filtroInicio.value + ':00',
+        horaFin:    filtroFin.value    + ':00'
+      });
+      if (filtroTipo.value) params.set('tipo', filtroTipo.value);
+
+      const salas = await api.get('/api/reservas/buscar-salas?' + params.toString());
+      buscarResultados.innerHTML = '';
+
+      if (!salas || salas.length === 0) {
+        buscarResultados.innerHTML = `
+          <div class="card" style="max-width:560px;text-align:center;padding:28px">
+            <div style="font-size:32px;margin-bottom:10px">🔍</div>
+            <div style="color:var(--text-muted);font-size:14px">
+              No hay espacios disponibles para los filtros seleccionados.
+            </div>
+          </div>`;
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;max-width:860px';
+      salas.forEach(sala => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.style.cursor = 'pointer';
+        card.innerHTML = `
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${sala.nombre}</div>
+          <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">${TIPO_LABEL[sala.tipo] || sala.tipo}</div>
+          <span class="badge badge-disponible">Disponible</span>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:8px">Capacidad: ${sala.capacidadMaxima} personas</div>
+          <button class="btn btn-primary full" style="margin-top:12px;font-size:12px">Reservar esta sala</button>`;
+        card.querySelector('button').addEventListener('click', () => {
+          selSala.value = sala.id;
+          inpFecha.value = filtroFecha.value;
+          horaInicio.value = filtroInicio.value;
+          horaFin.value    = filtroFin.value;
+          actualizarHintCapacidad();
+          cargarTimeline();
+          mostrarSeccion('reservar');
+        });
+        grid.appendChild(card);
+      });
+      buscarResultados.appendChild(grid);
+    } catch (err) {
+      buscarResultados.innerHTML = '';
+      const msg = err.fields?.fecha || err.fields?.horaInicio || err.message || 'Error al buscar salas';
+      if (err.fields?.fecha) {
+        document.getElementById('err-filtro-fecha').textContent = err.fields.fecha;
+        filtroFecha.classList.add('error');
+      }
+      toast.error(msg);
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   /* ── Init ── */

@@ -55,19 +55,65 @@
 
   /* ── Navegación ── */
   function mostrarSeccion(sec) {
-    ['salas', 'usuarios'].forEach(s => {
+    ['panel', 'salas', 'usuarios'].forEach(s => {
       document.getElementById('section-' + s).style.display = s === sec ? '' : 'none';
       document.getElementById('nav-' + s).classList.toggle('active', s === sec);
     });
-    const titulos = { salas: 'Gestión de Salas', usuarios: 'Gestión de Usuarios' };
+    const titulos = { panel: 'Panel de Control', salas: 'Gestión de Salas', usuarios: 'Gestión de Usuarios' };
     document.getElementById('main-title').textContent = titulos[sec];
   }
 
+  document.getElementById('nav-panel').addEventListener('click', e => {
+    e.preventDefault(); mostrarSeccion('panel'); cargarPanel();
+  });
   document.getElementById('nav-salas').addEventListener('click', e => { e.preventDefault(); mostrarSeccion('salas'); });
   document.getElementById('nav-usuarios').addEventListener('click', e => {
     e.preventDefault(); mostrarSeccion('usuarios');
     if (!listaUsuarios.length) cargarUsuarios();
   });
+
+  /* ══════════════════════════════
+     PANEL DE CONTROL — HU09
+  ══════════════════════════════ */
+  const ESTADO_LABEL_PANEL = {
+    DISPONIBLE: 'Disponible', RESERVADA: 'Reservada', EN_USO: 'En Uso',
+    EN_LIMPIEZA: 'En Limpieza', MANTENIMIENTO: 'Mantenimiento'
+  };
+
+  async function cargarPanel() {
+    const grid    = document.getElementById('panel-grid');
+    const resumen = document.getElementById('panel-resumen');
+    grid.innerHTML    = '<div style="color:var(--text-muted);font-size:13px">Cargando...</div>';
+    resumen.innerHTML = '';
+    try {
+      const salas = await api.get('/api/admin/salas/panel') || [];
+      grid.innerHTML = '';
+      if (!salas.length) {
+        grid.innerHTML = '<div style="color:var(--text-muted)">No hay salas registradas</div>';
+        return;
+      }
+      const conteos = {};
+      salas.forEach(s => { conteos[s.estadoPanel] = (conteos[s.estadoPanel] || 0) + 1; });
+      Object.entries(conteos).forEach(([estado, cnt]) => {
+        const chip = document.createElement('span');
+        chip.className = 'resumen-chip ' + estado.toLowerCase();
+        chip.textContent = `${ESTADO_LABEL_PANEL[estado] || estado}: ${cnt}`;
+        resumen.appendChild(chip);
+      });
+      salas.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'panel-card estado-' + s.estadoPanel.toLowerCase();
+        card.innerHTML = `
+          <div class="panel-card-nombre" title="${esc(s.nombre)}">${esc(s.nombre)}</div>
+          <div class="panel-card-tipo">${esc(s.tipo)}</div>
+          <span class="badge badge-${s.estadoPanel.toLowerCase()}">${ESTADO_LABEL_PANEL[s.estadoPanel] || s.estadoPanel}</span>
+          <div class="panel-card-cap">Capacidad: ${esc(s.capacidadMaxima)} personas</div>`;
+        grid.appendChild(card);
+      });
+    } catch (e) { grid.innerHTML = '<div style="color:var(--text-muted)">Error cargando panel</div>'; toast.error('Error cargando panel de control'); }
+  }
+
+  document.getElementById('btn-refresh-panel').addEventListener('click', cargarPanel);
 
   /* ══════════════════════════════
      SECCIÓN SALAS

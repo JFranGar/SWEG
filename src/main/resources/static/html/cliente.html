@@ -157,6 +157,7 @@
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
+        <a id="nav-buscar-salas" href="#">Buscar Salas</a>
         <a id="nav-reservar" class="active" href="#">Nueva Reserva</a>
         <a id="nav-mis" href="#">Mis Reservas</a>
       </nav>
@@ -166,6 +167,44 @@
       </div>
     </aside>
     <main class="main container">
+
+      <!-- ══ BUSCAR SALAS ══ -->
+      <div id="section-buscar-salas" style="display:none">
+        <div class="main-header"><h2>Buscar Salas Disponibles</h2></div>
+        <div class="card" style="max-width:560px;margin-bottom:20px">
+          <div class="card-title">Filtrar por disponibilidad</div>
+          <form id="buscar-salas-form">
+            <div class="field">
+              <label>Tipo de Sala</label>
+              <select id="filtro-tipo" class="select">
+                <option value="">Todos los tipos</option>
+                <option value="REUNION">REUNION</option>
+                <option value="SEMINARIO">SEMINARIO</option>
+                <option value="TRABAJO">TRABAJO</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Fecha</label>
+              <input id="filtro-fecha" type="date" class="input">
+              <div id="err-filtro-fecha" class="error-msg"></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="flex:1" class="field">
+                <label>Hora inicio</label>
+                <input id="filtro-inicio" type="time" class="input">
+                <div id="err-filtro-inicio" class="error-msg"></div>
+              </div>
+              <div style="flex:1" class="field">
+                <label>Hora fin</label>
+                <input id="filtro-fin" type="time" class="input">
+                <div id="err-filtro-fin" class="error-msg"></div>
+              </div>
+            </div>
+            <button class="btn btn-primary full" type="submit">Buscar disponibilidad</button>
+          </form>
+        </div>
+        <div id="buscar-salas-resultados"></div>
+      </div>
 
       <!-- ══ NUEVA RESERVA ══ -->
       <div id="section-reservar">

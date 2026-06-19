@@ -8,6 +8,7 @@ package com.cleancodecrew.sweg.model;
 public enum EstadoSala {
 	DISPONIBLE,
 	OCUPADA,
+	EN_LIMPIEZA,
 	MANTENIMIENTO,
 	ELIMINADA
 }

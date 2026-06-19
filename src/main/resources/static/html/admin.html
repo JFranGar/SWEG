@@ -41,6 +41,23 @@
     /* Footer de modales — botones centrados */
     .modal-footer { display:flex; gap:8px; margin-top:18px; justify-content:center; }
 
+    /* Panel de control de salas */
+    .panel-card { background:var(--bg-panel); border:1px solid var(--border-soft); border-radius:var(--radius); padding:16px; }
+    .panel-card-nombre { font-weight:700; font-size:14px; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .panel-card-tipo { font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+    .panel-card-cap { font-size:11px; color:var(--text-muted); margin-top:6px; }
+    .panel-card.estado-disponible { border-left:3px solid rgba(0,200,81,0.6); }
+    .panel-card.estado-reservada  { border-left:3px solid rgba(68,136,255,0.6); }
+    .panel-card.estado-en_uso     { border-left:3px solid rgba(255,165,0,0.7); }
+    .panel-card.estado-en_limpieza{ border-left:3px solid rgba(100,160,255,0.5); }
+    .panel-card.estado-mantenimiento{ border-left:3px solid rgba(150,150,150,0.5); }
+    .resumen-chip { padding:8px 14px; border-radius:999px; font-size:12px; font-weight:600; }
+    .resumen-chip.disponible { background:rgba(0,200,81,0.12); color:rgba(0,200,81,0.9); }
+    .resumen-chip.reservada  { background:rgba(68,136,255,0.12); color:#6699ff; }
+    .resumen-chip.en_uso     { background:rgba(255,165,0,0.12); color:#FFA500; }
+    .resumen-chip.en_limpieza{ background:rgba(100,160,255,0.12); color:#5599ff; }
+    .resumen-chip.mantenimiento{ background:rgba(150,150,150,0.12); color:#888; }
+
     /* Modal éxito */
     #modal-exito-admin { width:min(340px,90vw); }
     .exito-inner-a { padding:36px 32px; text-align:center; display:flex; flex-direction:column; align-items:center; }
@@ -60,6 +77,7 @@
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
+        <a id="nav-panel" href="#">Panel de Control</a>
         <a id="nav-salas" class="active" href="#">Gestión de Salas</a>
         <a id="nav-usuarios" href="#">Gestión de Usuarios</a>
       </nav>
@@ -70,6 +88,16 @@
     </aside>
     <main class="main container">
       <div class="main-header"><h2 id="main-title">Gestión de Salas</h2></div>
+
+      <!-- ══ SECCIÓN PANEL DE CONTROL ══ -->
+      <div id="section-panel" style="display:none">
+        <div class="section-bar">
+          <h3>Estado actual de salas</h3>
+          <button id="btn-refresh-panel" class="btn btn-secondary btn-sm">↻ Actualizar</button>
+        </div>
+        <div id="panel-resumen" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px"></div>
+        <div id="panel-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+      </div>
 
       <!-- ══ SECCIÓN SALAS ══ -->
       <div id="section-salas">

@@ -64,6 +64,16 @@ public class Sala {
         this.estado = EstadoSala.OCUPADA;
     }
 
+    /** CA-HU08-04: Libera la sala después de la salida del cliente. */
+    public void marcarDisponible() {
+        this.estado = EstadoSala.DISPONIBLE;
+    }
+
+    /** CA-HU08-03: Marca la sala para limpieza post-uso. */
+    public void marcarEnLimpieza() {
+        this.estado = EstadoSala.EN_LIMPIEZA;
+    }
+
     /** CA-HU02-06: Eliminación lógica para conservar historial de reservas. */
     public void eliminar() {
         this.estado = EstadoSala.ELIMINADA;

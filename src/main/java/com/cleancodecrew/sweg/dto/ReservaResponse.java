@@ -15,8 +15,11 @@ public record ReservaResponse(
         LocalTime horaFin,
         String estado,
         LocalDateTime fechaIngreso,
+        LocalDateTime fechaSalida,
         LocalDateTime fechaCancelacion,
-        Integer cantidadPersonas
+        Integer cantidadPersonas,
+        String correoCliente,
+        String nombreCliente
 ) {
     public record SalaMini(Long id, String nombre, String tipo, int capacidadMaxima) {}
 
@@ -28,7 +31,9 @@ public record ReservaResponse(
                 r.getId(), "", sm,
                 r.getFecha(), r.getHoraInicio(), r.getHoraFin(),
                 r.getEstado().name(),
-                r.getFechaIngreso(), r.getFechaCancelacion(),
-                r.getCantidadPersonas());
+                r.getFechaIngreso(), r.getFechaSalida(), r.getFechaCancelacion(),
+                r.getCantidadPersonas(),
+                r.getCliente() != null ? r.getCliente().getCorreo() : null,
+                r.getCliente() != null ? r.getCliente().getNombre() : null);
     }
 }
