@@ -7,27 +7,256 @@
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/dashboard.css">
-  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* ── Layout principal ── */
+    .rec-body { display: flex; gap: 0; height: calc(100vh - 76px); overflow: hidden; }
+
+    /* ── Panel izquierdo: lista de salas ── */
+    .sala-list-panel {
+      width: 300px;
+      min-width: 300px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--border-subtle);
+      background: var(--bg-panel-alt);
+    }
+    .sala-list-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .sala-list-title { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+    .sala-list-scroll { flex: 1; overflow-y: auto; padding: 10px 10px; scrollbar-width: thin; }
+    .sala-list-scroll::-webkit-scrollbar { width: 4px; }
+    .sala-list-scroll::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
+
+    /* ── Chips de filtro ── */
+    .filter-chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); }
+    .chip {
+      padding: 5px 12px; border-radius: 999px; font-size: 11px; font-weight: 600;
+      cursor: pointer; border: 1px solid var(--border-subtle);
+      color: var(--text-muted); background: transparent; transition: all .15s;
+    }
+    .chip.active { background: rgba(255,215,0,0.1); color: var(--gold); border-color: rgba(255,215,0,0.3); }
+    .chip:hover:not(.active) { border-color: var(--border-soft); color: var(--text-primary); }
+
+    /* ── Tarjeta de sala en la lista ── */
+    .sala-item {
+      padding: 12px 14px; border-radius: 8px; margin-bottom: 6px;
+      cursor: pointer; border: 1px solid transparent;
+      transition: all .15s; background: var(--bg-panel);
+    }
+    .sala-item:hover { border-color: var(--border-soft); background: rgba(255,255,255,0.02); }
+    .sala-item.selected { border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.04); }
+    .sala-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .sala-item-nombre { font-weight: 600; font-size: 13px; color: var(--text-primary); line-height: 1.3; }
+    .sala-item-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+    .sala-empty { text-align: center; color: var(--text-muted); font-size: 13px; padding: 32px 0; }
+
+    /* ── Panel derecho: detalle de sala ── */
+    .sala-detail-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .sala-detail-placeholder {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 12px; color: var(--text-muted);
+    }
+    .sala-detail-placeholder .ph-icon { font-size: 48px; opacity: 0.3; }
+    .sala-detail-placeholder p { font-size: 14px; }
+
+    .sala-detail-header {
+      padding: 16px 20px; border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      background: var(--bg-panel-alt);
+    }
+    .sala-detail-info { flex: 1; min-width: 0; }
+    .sala-detail-nombre { font-weight: 700; font-size: 16px; color: var(--text-primary); }
+    .sala-detail-meta { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+    .sala-detail-actions { display: flex; align-items: center; gap: 8px; }
+    .sala-detail-content { flex: 1; overflow-y: auto; padding: 16px 20px; scrollbar-width: thin; }
+    .sala-detail-content::-webkit-scrollbar { width: 5px; }
+    .sala-detail-content::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
+
+    /* ── Tarjeta de reserva ── */
+    .reserva-item {
+      background: var(--bg-panel); border: 1px solid var(--border-soft);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    }
+    .reserva-item:last-child { margin-bottom: 0; }
+    .reserva-item-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .reserva-item-tiempo { font-weight: 700; font-size: 15px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+    .reserva-item-cliente { font-size: 12px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; }
+    .reserva-item-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .no-reservas { text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px 0; }
+
+    /* ── Sección buscar correo ── */
+    .buscar-correo-wrap { max-width: 680px; }
+
+    /* ── Modal salida ── */
+    dialog {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      margin: 0; max-height: 92vh; overflow-y: auto;
+      background: var(--bg-panel); border: 1px solid var(--border-soft);
+      border-radius: var(--radius); padding: 0; width: min(420px,94vw);
+      color: var(--text-primary);
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); }
+    .modal-inner { padding: 24px; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .modal-title { font-weight: 700; color: var(--gold); font-size: 15px; }
+    .btn-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+    .btn-close:hover { color: var(--text-primary); }
+    .modal-footer { display: flex; gap: 8px; margin-top: 18px; justify-content: flex-end; }
+    .modal-body-info {
+      background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+      border-radius: 8px; padding: 14px; margin-bottom: 16px;
+    }
+    .modal-body-info .info-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+    .modal-body-info .info-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .limpieza-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);
+      background: rgba(255,255,255,0.02); cursor: pointer; margin-bottom: 12px;
+    }
+    .limpieza-row:hover { border-color: rgba(255,215,0,0.2); }
+    .limpieza-row input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--gold); }
+    .limpieza-row label { font-size: 13px; color: var(--text-primary); cursor: pointer; flex: 1; line-height: 1.4; }
+    .limpieza-row label span { display: block; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .info-nota { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .icon-btn { background: none; border: 1px solid var(--border-subtle); color: var(--text-muted); cursor: pointer;
+      border-radius: 8px; padding: 7px 10px; font-size: 14px; transition: all .15s; }
+    .icon-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+    /* ── Responsive ── */
+    @media (max-width: 720px) {
+      .rec-body { flex-direction: column; height: auto; }
+      .sala-list-panel { width: 100%; min-width: unset; border-right: none; border-bottom: 1px solid var(--border-subtle); max-height: 300px; }
+    }
+  </style>
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
-      <nav class="nav"><a class="active" href="#">Recepción</a></nav>
-      <div class="sidebar-footer"><button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button></div>
-    </aside>
-    <main class="main container">
-      <div class="main-header"><h2>Panel Recepción</h2><div id="user-correo" class="user-chip"></div></div>
-      <div class="card" style="max-width:720px">
-        <div class="card-title">Buscar Reserva por correo</div>
-        <form id="buscar-form" style="display:flex;gap:8px;align-items:center">
-          <input id="correo-cliente" type="email" placeholder="cliente@swgec.ec" class="input" style="flex:1">
-          <button class="btn btn-primary" type="submit">Buscar</button>
-        </form>
-        <div id="resultados" style="margin-top:12px"></div>
+      <nav class="nav">
+        <a id="nav-dia" class="active" href="#">Vista del Día</a>
+        <a id="nav-correo" href="#">Buscar por Correo</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div id="user-correo" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
+        <button id="btn-logout" class="btn btn-secondary full">Cerrar sesión</button>
       </div>
+    </aside>
+
+    <main class="main" style="padding:0;overflow:hidden;display:flex;flex-direction:column">
+
+      <!-- ── Cabecera ── -->
+      <div class="main-header" style="padding:16px 24px;margin:0;border-bottom:1px solid var(--border-subtle);flex-shrink:0">
+        <h2 id="main-title" style="font-size:17px">Vista del Día</h2>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span id="fecha-hoy" style="font-size:12px;color:var(--text-muted)"></span>
+          <button id="btn-refresh" class="icon-btn" title="Actualizar">↻</button>
+        </div>
+      </div>
+
+      <!-- ══ SECCIÓN VISTA DEL DÍA ══ -->
+      <div id="section-dia" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="rec-body">
+
+          <!-- Panel izquierdo: salas -->
+          <div class="sala-list-panel">
+            <div class="sala-list-header">
+              <span class="sala-list-title">Salas</span>
+              <span id="salas-count" style="font-size:11px;color:var(--text-muted)"></span>
+            </div>
+            <div class="filter-chips" id="filter-chips">
+              <button class="chip active" data-filtro="TODAS">Todas</button>
+              <button class="chip" data-filtro="RESERVADA">Con Reserva</button>
+              <button class="chip" data-filtro="EN_USO">En Uso</button>
+              <button class="chip" data-filtro="EN_LIMPIEZA">En Limpieza</button>
+            </div>
+            <div class="sala-list-scroll" id="sala-list"></div>
+          </div>
+
+          <!-- Panel derecho: detalle -->
+          <div class="sala-detail-panel" id="sala-detail-panel">
+            <div class="sala-detail-placeholder" id="detail-placeholder">
+              <div class="ph-icon">🏢</div>
+              <p>Selecciona una sala para ver sus reservas del día</p>
+            </div>
+            <div id="detail-content" style="display:none;flex:1;flex-direction:column;min-height:0">
+              <div class="sala-detail-header">
+                <div class="sala-detail-info">
+                  <div class="sala-detail-nombre" id="detail-nombre"></div>
+                  <div class="sala-detail-meta" id="detail-meta"></div>
+                </div>
+                <div class="sala-detail-actions">
+                  <span id="detail-estado-badge"></span>
+                  <button id="btn-limpieza-disponible" class="btn btn-secondary btn-sm" style="display:none">✓ Marcar disponible</button>
+                  <button id="btn-refresh-detail" class="icon-btn" title="Actualizar">↻</button>
+                </div>
+              </div>
+              <div class="sala-detail-content" id="reservas-list"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ══ SECCIÓN BUSCAR POR CORREO ══ -->
+      <div id="section-correo" style="display:none;flex:1;padding:24px;overflow-y:auto">
+        <div class="buscar-correo-wrap">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title">Buscar cliente por correo electrónico</div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">
+              Encuentra las reservas activas, en uso o pendientes de un cliente específico.
+            </p>
+            <form id="buscar-form" style="display:flex;gap:8px;align-items:flex-start">
+              <div style="flex:1">
+                <input id="correo-cliente" type="email" placeholder="cliente@ejemplo.com" class="input" style="width:100%">
+                <div id="err-correo" style="color:var(--state-cancelled);font-size:12px;min-height:14px;margin-top:4px"></div>
+              </div>
+              <button class="btn btn-primary" type="submit" style="white-space:nowrap">Buscar</button>
+            </form>
+          </div>
+          <div id="resultados-correo"></div>
+        </div>
+      </div>
+
     </main>
   </div>
+
+  <!-- ══ MODAL REGISTRAR SALIDA ══ -->
+  <dialog id="modal-salida">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title">Registrar Salida</span>
+        <button type="button" class="btn-close" id="modal-salida-close">×</button>
+      </div>
+      <div class="modal-body-info">
+        <div class="info-label">Sala</div>
+        <div class="info-value" id="salida-sala-nombre">—</div>
+        <div class="info-label" style="margin-top:10px">Cliente</div>
+        <div class="info-value" id="salida-cliente-nombre" style="font-size:13px"></div>
+        <div class="info-label" style="margin-top:6px">Horario</div>
+        <div class="info-value" id="salida-horario" style="font-size:13px"></div>
+      </div>
+      <div class="limpieza-row" id="limpieza-toggle">
+        <input type="checkbox" id="chk-limpieza">
+        <label for="chk-limpieza">
+          La sala requiere limpieza
+          <span>La sala quedará bloqueada hasta marcarla como disponible</span>
+        </label>
+      </div>
+      <p class="info-nota">Si no requiere limpieza, la sala quedará <strong>disponible</strong> inmediatamente para nuevas reservas.</p>
+      <div class="modal-footer">
+        <button type="button" id="btn-cancelar-salida" class="btn btn-secondary">Cancelar</button>
+        <button type="button" id="btn-confirmar-salida" class="btn btn-primary">Confirmar salida</button>
+      </div>
+    </div>
+  </dialog>
+
   <div id="toast-container"></div>
   <script src="/js/api.js"></script>
   <script src="/js/guards.js"></script>

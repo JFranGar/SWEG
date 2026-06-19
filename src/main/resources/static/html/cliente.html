@@ -18,6 +18,25 @@
     }
     @media (max-width: 860px) { .reserva-grid { grid-template-columns: 1fr; } }
 
+    /* ── Layout buscar salas ── */
+    .buscar-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .buscar-grid { grid-template-columns: 1fr; } }
+
+    /* ── Banner de sala seleccionada en búsqueda ── */
+    .buscar-sala-banner {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin-bottom: 12px;
+      background: rgba(255,215,0,0.04); border: 1px solid rgba(255,215,0,0.15);
+      border-radius: 8px; font-size: 13px;
+    }
+    .buscar-sala-banner .bs-nombre { font-weight: 700; color: var(--text-primary); }
+    .buscar-sala-banner .bs-meta { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
     /* ══════════════════════════════
        TIMELINE VERTICAL
     ══════════════════════════════ */
@@ -66,6 +85,7 @@
     .tl-row-bar.bloqueado { background: rgba(255,165,0,0.14);  color: rgba(255,165,0,0.85);  cursor: not-allowed; }
     .tl-row-bar.cerrado   { background: rgba(40,40,40,0.30);   color: rgba(120,120,120,0.7); cursor: not-allowed; }
     .tl-row-bar.pasado    { background: rgba(15,15,15,0.45);   color: rgba(80,80,80,0.65);   cursor: not-allowed; opacity: 0.6; }
+    .tl-row-bar.propio    { background: rgba(68,136,255,0.18); color: rgba(140,185,255,0.9); cursor: not-allowed; outline: 1px solid rgba(68,136,255,0.35); }
     /* Selección */
     .tl-row-bar.sel-inicio,
     .tl-row-bar.sel-fin,
@@ -156,6 +176,7 @@
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
+        <a id="nav-buscar-salas" href="#">Buscar Salas</a>
         <a id="nav-reservar" class="active" href="#">Nueva Reserva</a>
         <a id="nav-mis" href="#">Mis Reservas</a>
       </nav>
@@ -165,6 +186,67 @@
       </div>
     </aside>
     <main class="main container">
+
+      <!-- ══ BUSCAR SALAS ══ -->
+      <div id="section-buscar-salas" style="display:none">
+        <div class="main-header"><h2>Buscar Salas Disponibles</h2></div>
+        <div class="buscar-grid">
+
+          <!-- Columna izquierda: filtros -->
+          <div class="card" style="align-self:start">
+            <div class="card-title">Filtros de búsqueda</div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;line-height:1.5">
+              Elige el tipo y la sala para ver su disponibilidad del día.
+            </p>
+            <div class="field">
+              <label>Tipo de Sala</label>
+              <select id="filtro-tipo" class="select">
+                <option value="">Todos los tipos</option>
+                <option value="REUNION">Reunión</option>
+                <option value="SEMINARIO">Seminario</option>
+                <option value="TRABAJO">Trabajo</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Sala</label>
+              <select id="filtro-sala" class="select">
+                <option value="">Seleccione una sala...</option>
+              </select>
+              <div id="filtro-sala-hint" class="capacity-hint"></div>
+            </div>
+            <div class="field">
+              <label>Fecha</label>
+              <input id="filtro-fecha" type="date" class="input">
+              <div id="err-filtro-fecha" class="error-msg"></div>
+            </div>
+          </div>
+
+          <!-- Columna derecha: timeline de la sala seleccionada -->
+          <div class="card" id="buscar-tl-card">
+            <div class="card-title">Disponibilidad del día</div>
+            <div id="buscar-tl-placeholder" class="tl-placeholder">
+              Selecciona una sala y una fecha para ver su horario.
+            </div>
+            <div id="buscar-tl-wrap" style="display:none">
+              <div id="buscar-tl-sala-info" class="buscar-sala-banner"></div>
+              <div id="buscar-tl-rows" class="tl-scroll"></div>
+              <div class="tl-legend" style="margin-top:10px">
+                <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
+                <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
+                <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Hora pasada</span>
+                <span><span class="tl-leg-dot" style="background:rgba(68,136,255,0.4)"></span>Seleccionado</span>
+              </div>
+              <p class="tl-hint">Clic en el inicio y luego en el fin para preseleccionar el horario.</p>
+              <button id="btn-reservar-busqueda" class="btn btn-primary full" style="margin-top:14px;display:none">Reservar esta sala</button>
+            </div>
+            <div id="buscar-tl-nodisp" class="tl-placeholder" style="display:none">
+              <div style="font-size:34px;margin-bottom:8px;opacity:0.4">🔍</div>
+              No hay salas disponibles para este filtro.
+            </div>
+          </div>
+
+        </div>
+      </div>
 
       <!-- ══ NUEVA RESERVA ══ -->
       <div id="section-reservar">
@@ -309,6 +391,7 @@
             <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
             <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
             <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Pasado</span>
+            <span><span class="tl-leg-dot" style="background:rgba(68,136,255,0.5)"></span>Tu reserva actual</span>
           </div>
         </div>
       </div>

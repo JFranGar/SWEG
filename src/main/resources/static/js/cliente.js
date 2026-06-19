@@ -5,12 +5,15 @@
 
   /* ── Navegación ── */
   function mostrarSeccion(sec) {
-    document.getElementById('section-reservar').style.display = sec === 'reservar' ? '' : 'none';
-    document.getElementById('section-mis').style.display      = sec === 'mis'      ? '' : 'none';
-    document.getElementById('nav-reservar').classList.toggle('active', sec === 'reservar');
-    document.getElementById('nav-mis').classList.toggle('active',      sec === 'mis');
+    document.getElementById('section-buscar-salas').style.display = sec === 'buscar-salas' ? '' : 'none';
+    document.getElementById('section-reservar').style.display     = sec === 'reservar'     ? '' : 'none';
+    document.getElementById('section-mis').style.display          = sec === 'mis'          ? '' : 'none';
+    document.getElementById('nav-buscar-salas').classList.toggle('active', sec === 'buscar-salas');
+    document.getElementById('nav-reservar').classList.toggle('active',     sec === 'reservar');
+    document.getElementById('nav-mis').classList.toggle('active',          sec === 'mis');
     if (sec === 'mis') cargarMisReservas(0);
   }
+  document.getElementById('nav-buscar-salas').addEventListener('click', e => { e.preventDefault(); mostrarSeccion('buscar-salas'); });
   document.getElementById('nav-reservar').addEventListener('click', e => { e.preventDefault(); mostrarSeccion('reservar'); });
   document.getElementById('nav-mis').addEventListener('click',      e => { e.preventDefault(); mostrarSeccion('mis'); });
 
@@ -57,6 +60,12 @@
   const errEditInicio   = document.getElementById('err-editar-inicio');
   const errEditFin      = document.getElementById('err-editar-fin');
   const editCapHint     = document.getElementById('edit-capacity-hint');
+
+  /* ── Estado de la reserva que se está editando (para resaltado azul) ── */
+  let editarOriginalInicio = null;
+  let editarOriginalFin    = null;
+  let editarOriginalSalaId = null;
+  let editarOriginalFecha  = null;
 
   /* ── Refs Modal Éxito ── */
   const modalExito = document.getElementById('modal-exito');
@@ -119,17 +128,22 @@
       + String(d.getDate()).padStart(2, '0');
   }
 
-  function clasificarSlot(idx, reservas, nowMins, isToday) {
+  function clasificarSlot(idx, reservas, nowMins, isToday, reservaPropia = null) {
     const sMin = TL_H_INI * 60 + idx * 30;
     const eMin = sMin + 30;
     if (isToday && eMin <= nowMins) return 'pasado';
+    if (reservaPropia) {
+      const pIni = parseMins(reservaPropia.horaInicio);
+      const pFin = parseMins(reservaPropia.horaFin);
+      if (sMin >= pIni && eMin <= pFin) return 'propio';
+    }
     if (reservas.some(r => sMin < parseMins(r.horaFin) && parseMins(r.horaInicio) < eMin)) return 'ocupado';
     return 'libre';
   }
 
-  const ESTADO_LABEL = { libre: 'Libre', ocupado: 'Ocupado', pasado: 'Hora pasada' };
+  const ESTADO_LABEL = { libre: 'Libre', ocupado: 'Ocupado', pasado: 'Hora pasada', propio: 'Tu reserva actual' };
 
-  function renderTimelineEn(containerEl, reservas, fecha, onClickSlot) {
+  function renderTimelineEn(containerEl, reservas, fecha, onClickSlot, reservaPropia = null) {
     containerEl.innerHTML = '';
     const hoy     = localDateStr();
     const isToday = fecha === hoy;
@@ -148,7 +162,7 @@
       row.appendChild(timeEl);
 
       if (!isEnd) {
-        const estado = clasificarSlot(i, reservas, nowMins, isToday);
+        const estado = clasificarSlot(i, reservas, nowMins, isToday, reservaPropia);
         const bar    = document.createElement('div');
         bar.className   = 'tl-row-bar ' + estado;
         bar.textContent = ESTADO_LABEL[estado] || estado;
@@ -229,7 +243,11 @@
     ph.textContent = 'Cargando…';
     try {
       const reservas = await api.get(`/api/reservas/horario-dia?salaId=${salaId}&fecha=${fecha}`);
-      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], fecha, null);
+      const mismoContexto = salaId === editarOriginalSalaId && fecha === editarOriginalFecha;
+      const reservaPropia = (mismoContexto && editarOriginalInicio && editarOriginalFin)
+        ? { horaInicio: editarOriginalInicio, horaFin: editarOriginalFin }
+        : null;
+      renderTimelineEn(document.getElementById('edit-tl-rows'), reservas || [], fecha, null, reservaPropia);
       ph.style.display   = 'none';
       wrap.style.display = 'block';
     } catch {
@@ -355,6 +373,11 @@
     editarCantidad.value = r.cantidadPersonas != null ? r.cantidadPersonas : '';
     if (r.sala) editarSala.value = r.sala.id;
     editarFecha.min = localDateStr();
+
+    editarOriginalInicio = String(r.horaInicio).substring(0, 5);
+    editarOriginalFin    = String(r.horaFin).substring(0, 5);
+    editarOriginalSalaId = r.sala ? String(r.sala.id) : null;
+    editarOriginalFecha  = r.fecha;
 
     actualizarHintCapacidadEditar();
 
@@ -513,8 +536,153 @@
     } finally { btnReservar.disabled = false; }
   });
 
+  /* ══════════════════════════════
+     BUSCAR SALAS DISPONIBLES — HU03
+     Flujo: Tipo → Sala (nombre) → Fecha → timeline del día
+  ══════════════════════════════ */
+  const filtroTipo          = document.getElementById('filtro-tipo');
+  const filtroSala          = document.getElementById('filtro-sala');
+  const filtroSalaHint      = document.getElementById('filtro-sala-hint');
+  const filtroFecha         = document.getElementById('filtro-fecha');
+  const buscarTlPlaceholder = document.getElementById('buscar-tl-placeholder');
+  const buscarTlWrap        = document.getElementById('buscar-tl-wrap');
+  const buscarTlRowsEl      = document.getElementById('buscar-tl-rows');
+  const buscarTlSalaInfo    = document.getElementById('buscar-tl-sala-info');
+  const buscarTlNoDisp      = document.getElementById('buscar-tl-nodisp');
+  const btnReservarBusqueda = document.getElementById('btn-reservar-busqueda');
+
+  filtroFecha.min = localDateStr();
+
+  const TIPO_LABEL = { REUNION: 'Reunión', SEMINARIO: 'Seminario', TRABAJO: 'Trabajo' };
+
+  let salasReservables  = [];   // todas las salas reservables (cargadas una vez)
+  let buscarSalaActiva  = null; // objeto sala seleccionado
+  let buscarSelStart    = null;
+  let buscarSelEnd      = null;
+
+  async function cargarSalasReservables() {
+    try {
+      salasReservables = await api.get('/api/reservas/salas-reservables') || [];
+      poblarDropdownSalas();
+    } catch { /* silencioso; se reintenta al entrar a la sección */ }
+  }
+
+  /* Rellena el desplegable de salas según el tipo elegido */
+  function poblarDropdownSalas() {
+    const tipo = filtroTipo.value;
+    const lista = tipo ? salasReservables.filter(s => s.tipo === tipo) : salasReservables;
+
+    filtroSala.innerHTML = '';
+    filtroSala.appendChild(new Option(lista.length ? 'Seleccione una sala...' : 'Sin salas de este tipo', ''));
+    lista.forEach(s => filtroSala.appendChild(new Option(s.nombre, s.id)));
+
+    filtroSalaHint.textContent = tipo
+      ? `${lista.length} sala${lista.length !== 1 ? 's' : ''} de tipo ${TIPO_LABEL[tipo] || tipo}`
+      : `${lista.length} sala${lista.length !== 1 ? 's' : ''} en total`;
+
+    // reset panel derecho
+    buscarSalaActiva = null;
+    mostrarTimelinePlaceholder('Selecciona una sala y una fecha para ver su horario.');
+  }
+
+  function salaBuscarPorId(id) {
+    return salasReservables.find(s => String(s.id) === String(id)) || null;
+  }
+
+  function mostrarTimelinePlaceholder(msg) {
+    buscarTlPlaceholder.textContent   = msg;
+    buscarTlPlaceholder.style.display = 'block';
+    buscarTlWrap.style.display        = 'none';
+    buscarTlNoDisp.style.display      = 'none';
+  }
+
+  /* Carga el timeline de la sala+fecha seleccionadas */
+  async function cargarTimelineBuscar() {
+    const sala  = salaBuscarPorId(filtroSala.value);
+    const fecha = filtroFecha.value;
+
+    if (!sala || !fecha) {
+      mostrarTimelinePlaceholder('Selecciona una sala y una fecha para ver su horario.');
+      return;
+    }
+    if (fecha < localDateStr()) {
+      document.getElementById('err-filtro-fecha').textContent = 'No se permiten fechas pasadas';
+      filtroFecha.classList.add('error');
+      mostrarTimelinePlaceholder('Selecciona una fecha válida (hoy o posterior).');
+      return;
+    }
+    document.getElementById('err-filtro-fecha').textContent = '';
+    filtroFecha.classList.remove('error');
+
+    buscarSalaActiva = sala;
+    buscarSelStart = null;
+    buscarSelEnd   = null;
+
+    buscarTlPlaceholder.style.display = 'none';
+    buscarTlNoDisp.style.display      = 'none';
+    buscarTlWrap.style.display        = 'block';
+    buscarTlRowsEl.innerHTML          = '<div style="color:var(--text-muted);padding:20px 0;font-size:12px">Cargando…</div>';
+    buscarTlSalaInfo.innerHTML        =
+      `<span class="bs-nombre">${sala.nombre}</span>
+       <span class="badge badge-disponible" style="font-size:11px">${TIPO_LABEL[sala.tipo] || sala.tipo}</span>
+       <span class="bs-meta">Capacidad: ${sala.capacidadMaxima} personas</span>`;
+    btnReservarBusqueda.style.display = 'none';
+
+    try {
+      const reservas = await api.get(`/api/reservas/horario-dia?salaId=${sala.id}&fecha=${fecha}`);
+      renderTimelineEn(buscarTlRowsEl, reservas || [], fecha, idx => {
+        if (buscarSelStart === null || buscarSelEnd !== null) {
+          buscarSelStart = idx; buscarSelEnd = null;
+        } else {
+          buscarSelEnd = idx;
+          const lo = Math.min(buscarSelStart, buscarSelEnd);
+          const hi = Math.max(buscarSelStart, buscarSelEnd);
+          buscarSelStart = lo; buscarSelEnd = hi;
+        }
+        actualizarResaltadoBuscar();
+      });
+      btnReservarBusqueda.style.display = '';
+    } catch {
+      buscarTlRowsEl.innerHTML = '<div style="color:var(--text-muted);padding:20px 0;font-size:12px">No se pudo cargar la disponibilidad</div>';
+    }
+  }
+
+  function actualizarResaltadoBuscar() {
+    buscarTlRowsEl.querySelectorAll('.tl-row-bar').forEach((bar, i) => {
+      bar.classList.remove('sel-inicio', 'sel-fin', 'sel-rango');
+      if (buscarSelStart === null) return;
+      const lo = buscarSelEnd !== null ? Math.min(buscarSelStart, buscarSelEnd) : buscarSelStart;
+      const hi = buscarSelEnd !== null ? Math.max(buscarSelStart, buscarSelEnd) : buscarSelStart;
+      if (i === lo) bar.classList.add('sel-inicio');
+      else if (i === hi && buscarSelEnd !== null) bar.classList.add('sel-fin');
+      else if (i > lo && i < hi) bar.classList.add('sel-rango');
+    });
+  }
+
+  filtroTipo.addEventListener('change', poblarDropdownSalas);
+  filtroSala.addEventListener('change', cargarTimelineBuscar);
+  filtroFecha.addEventListener('change', cargarTimelineBuscar);
+
+  /* Lleva la selección a "Nueva Reserva" con sala, fecha y (si hay) horario precargados */
+  btnReservarBusqueda.addEventListener('click', () => {
+    if (!buscarSalaActiva) return;
+    selSala.value  = buscarSalaActiva.id;
+    inpFecha.value = filtroFecha.value;
+    if (buscarSelStart !== null) {
+      const lo = buscarSelEnd !== null ? Math.min(buscarSelStart, buscarSelEnd) : buscarSelStart;
+      const hi = buscarSelEnd !== null ? Math.max(buscarSelStart, buscarSelEnd) : buscarSelStart;
+      horaInicio.value = slotToTime(lo);
+      horaFin.value    = slotToTime(hi + 1);
+    }
+    actualizarHintCapacidad();
+    cargarTimeline();
+    mostrarSeccion('reservar');
+    toast.info('Sala precargada en Nueva Reserva');
+  });
+
   /* ── Init ── */
   inpFecha.min    = localDateStr();
   editarFecha.min = localDateStr();
   await cargarSalas();
+  await cargarSalasReservables();
 })();

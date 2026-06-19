@@ -1,12 +1,14 @@
 package com.cleancodecrew.sweg.controller;
 
+import com.cleancodecrew.sweg.dto.DisponibilidadResponse;
 import com.cleancodecrew.sweg.dto.HorarioReglaResponse;
 import com.cleancodecrew.sweg.dto.ReservaRequest;
 import com.cleancodecrew.sweg.dto.ReservaResponse;
 import com.cleancodecrew.sweg.model.EstadoReserva;
+import com.cleancodecrew.sweg.model.EstadoSala;
 import com.cleancodecrew.sweg.model.Reserva;
 import com.cleancodecrew.sweg.model.Sala;
-import com.cleancodecrew.sweg.model.TipoRegla;
+import com.cleancodecrew.sweg.model.TipoSala;
 import com.cleancodecrew.sweg.model.Usuario;
 import com.cleancodecrew.sweg.repository.HorarioReglaRepository;
 import com.cleancodecrew.sweg.repository.ReservaRepository;
@@ -23,10 +25,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
-import com.cleancodecrew.sweg.dto.DisponibilidadResponse;
 
 @RestController
 @RequestMapping({"/api/cliente/reservas", "/api/reservas"})
@@ -47,8 +50,96 @@ public class ReservaController {
 
 	@GetMapping("/salas-disponibles")
 	public ResponseEntity<List<Sala>> salasDisponibles() {
-		var list = salaRepository.findAll().stream().filter(s -> s.getEstado() == null || s.getEstado().name().equals("DISPONIBLE") || s.getEstado() == com.cleancodecrew.sweg.model.EstadoSala.DISPONIBLE).toList();
+		var list = salaRepository.findAll().stream()
+				.filter(s -> s.getEstado() == EstadoSala.DISPONIBLE)
+				.toList();
 		return ResponseEntity.ok(list);
+	}
+
+	/**
+	 * CA-HU03-03: Salas reservables (DISPONIBLE u OCUPADA) para poblar los desplegables de búsqueda.
+	 * La disponibilidad real por horario se consulta luego con /horario-dia sobre la sala elegida.
+	 */
+	@GetMapping("/salas-reservables")
+	public ResponseEntity<List<Sala>> salasReservables(@RequestParam(required = false) String tipo) {
+		TipoSala tipoFiltro = parseTipo(tipo);
+		var list = salaRepository.findAll().stream()
+				.filter(s -> s.getEstado() == EstadoSala.DISPONIBLE || s.getEstado() == EstadoSala.OCUPADA)
+				.filter(s -> tipoFiltro == null || s.getTipo() == tipoFiltro)
+				.sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
+				.toList();
+		return ResponseEntity.ok(list);
+	}
+
+	private TipoSala parseTipo(String tipo) {
+		if (tipo == null || tipo.isBlank()) return null;
+		try {
+			return TipoSala.valueOf(tipo.toUpperCase());
+		} catch (IllegalArgumentException ex) {
+			return null;
+		}
+	}
+
+	/**
+	 * CA-HU03-01,02,03,04: Busca salas disponibles filtrando por tipo y fecha.
+	 * El rango de horas es OPCIONAL: si se envía, además filtra salas con solapamiento.
+	 * Rechaza fechas pasadas y rangos inválidos.
+	 */
+	@GetMapping("/buscar-salas")
+	public ResponseEntity<?> buscarSalas(
+			@RequestParam(required = false) String tipo,
+			@RequestParam(required = false) LocalDate fecha,
+			@RequestParam(required = false) LocalTime horaInicio,
+			@RequestParam(required = false) LocalTime horaFin,
+			HttpServletRequest request) {
+
+		Map<String, String> errores = new LinkedHashMap<>();
+
+		// fecha sigue siendo obligatoria
+		if (fecha == null) {
+			errores.put("fecha", "La fecha es obligatoria");
+			return ResponseEntity.badRequest().body(
+					com.cleancodecrew.sweg.dto.ApiError.of(400, "Campos obligatorios ausentes", request.getRequestURI(), errores));
+		}
+
+		// CA-HU03-04: rechazar fechas pasadas
+		if (fecha.isBefore(LocalDate.now())) {
+			errores.put("fecha", "No se permiten consultas en fechas pasadas");
+			return ResponseEntity.badRequest().body(
+					com.cleancodecrew.sweg.dto.ApiError.of(400, "Fecha inválida", request.getRequestURI(), errores));
+		}
+
+		// El rango horario es opcional, pero si se envía uno debe venir completo y ser válido
+		boolean filtrarPorHora = horaInicio != null || horaFin != null;
+		if (filtrarPorHora) {
+			if (horaInicio == null || horaFin == null) {
+				errores.put("horaInicio", "Debe indicar hora de inicio y fin, o ninguna");
+				return ResponseEntity.badRequest().body(
+						com.cleancodecrew.sweg.dto.ApiError.of(400, "Rango horario incompleto", request.getRequestURI(), errores));
+			}
+			if (!horaInicio.isBefore(horaFin)) {
+				errores.put("horaInicio", "La hora de inicio debe ser menor a la hora de fin");
+				return ResponseEntity.badRequest().body(
+						com.cleancodecrew.sweg.dto.ApiError.of(400, "Rango horario inválido", request.getRequestURI(), errores));
+			}
+		}
+
+		TipoSala tipoFiltro = parseTipo(tipo);
+
+		// Si hay rango horario, excluir salas con solapamiento en ese intervalo
+		final Set<Long> ocupadas = filtrarPorHora
+				? new java.util.HashSet<>(reservaRepository.findSalaIdsConReservaEnHorario(fecha, horaInicio, horaFin))
+				: java.util.Collections.emptySet();
+
+		final TipoSala tipoFinal = tipoFiltro;
+		List<Sala> disponibles = salaRepository.findAll().stream()
+				.filter(s -> s.getEstado() == EstadoSala.DISPONIBLE || s.getEstado() == EstadoSala.OCUPADA)
+				.filter(s -> tipoFinal == null || s.getTipo() == tipoFinal)
+				.filter(s -> !ocupadas.contains(s.getId()))
+				.sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
+				.toList();
+
+		return ResponseEntity.ok(disponibles);
 	}
 
 	@GetMapping
@@ -80,6 +171,13 @@ public class ReservaController {
 
 		Sala sala = maybeSala.get();
 		Usuario cliente = maybeCliente.get();
+
+		if (sala.getEstado() == EstadoSala.EN_LIMPIEZA) {
+			throw new ConflictoException("La sala está en limpieza y no puede ser reservada");
+		}
+		if (sala.getEstado() == EstadoSala.MANTENIMIENTO) {
+			throw new ConflictoException("La sala está en mantenimiento y no puede ser reservada");
+		}
 
 		if (req.getCantidadPersonas() > sala.getCapacidadMaxima()) {
 			throw new ConflictoException("La cantidad de personas (" + req.getCantidadPersonas()
@@ -175,29 +273,13 @@ public class ReservaController {
 				.stream().map(HorarioReglaResponse::de).toList());
 	}
 
-	/** Valida que horaInicio-horaFin respete las reglas APERTURA y BLOQUEO activas para la fecha dada. */
+	private static final LocalTime HORA_APERTURA = LocalTime.of(7, 0);
+	private static final LocalTime HORA_CIERRE   = LocalTime.of(22, 0);
+
+	/** Valida que el horario esté dentro del rango comercial fijo 07:00–22:00. */
 	private void validarReglas(LocalDate fecha, LocalTime horaInicio, LocalTime horaFin) {
-		var reglas = horarioReglaRepository.findByActivoTrue();
-		if (reglas.isEmpty()) return;
-		int dia = fecha.getDayOfWeek().getValue(); // ISO: 1=Lun…7=Dom
-		var aperturas = reglas.stream()
-				.filter(r -> r.getTipo() == TipoRegla.APERTURA)
-				.filter(r -> r.getDiaSemana() == null || Integer.valueOf(dia).equals(r.getDiaSemana()))
-				.toList();
-		if (!aperturas.isEmpty()) {
-			boolean dentro = aperturas.stream().anyMatch(r ->
-					!horaInicio.isBefore(r.getHoraInicio()) && !horaFin.isAfter(r.getHoraFin()));
-			if (!dentro) throw new ConflictoException("La reserva está fuera del horario comercial");
-		}
-		var bloqueos = reglas.stream()
-				.filter(r -> r.getTipo() == TipoRegla.BLOQUEO)
-				.filter(r -> r.getDiaSemana() == null || Integer.valueOf(dia).equals(r.getDiaSemana()))
-				.toList();
-		for (var r : bloqueos) {
-			if (horaInicio.isBefore(r.getHoraFin()) && r.getHoraInicio().isBefore(horaFin)) {
-				throw new ConflictoException("El horario está bloqueado"
-						+ (r.getDescripcion() != null ? ": " + r.getDescripcion() : ""));
-			}
+		if (horaInicio.isBefore(HORA_APERTURA) || horaFin.isAfter(HORA_CIERRE)) {
+			throw new ConflictoException("El horario debe estar entre 07:00 y 22:00");
 		}
 	}
 

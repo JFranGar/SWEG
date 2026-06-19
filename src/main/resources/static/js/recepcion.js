@@ -1,19 +1,326 @@
-(async function(){
-  const me = await guard(['RECEPCIONISTA','ADMIN']); if(!me) return;
-  const form = document.getElementById('buscar-form'); const correo = document.getElementById('correo-cliente') || document.getElementById('correo'); const resultados = document.getElementById('resultados');
-  form.addEventListener('submit', async function(e){
-    e.preventDefault(); resultados.innerHTML=''; if(!correo.value){toast.error('Ingrese un correo'); return}
-    try{
-      const r = await api.get('/api/recepcion/buscar-reserva?correoCliente=' + encodeURIComponent(correo.value));
-      if(!r.length){resultados.innerHTML = '<div style="color:var(--text-muted)">No se encontraron reservas</div>'; return}
-      r.forEach(res=>{
-        const card = document.createElement('div'); card.className='card';
-        card.innerHTML = `<div><strong>${res.sala.nombre}</strong> - ${res.fecha} ${res.horaInicio} - ${res.horaFin}</div><div style="margin-top:8px">Estado: <span class="badge badge-${res.estado.toLowerCase()}">${res.estado}</span></div>`;
-        const btn = document.createElement('button'); btn.className='btn btn-primary'; btn.textContent='Registrar ingreso'; btn.style.marginTop='8px'; btn.addEventListener('click', async ()=>{
-          try{ await api.patch('/api/recepcion/reservas/' + res.id + '/ingreso'); toast.success('Ingreso registrado'); btn.disabled=true; card.querySelector('.badge').textContent='EN_USO'; }catch(err){ toast.error(err.message||'Error') }
-        });
-        card.appendChild(btn); resultados.appendChild(card);
-      })
-    }catch(err){ toast.error(err.message||'Error buscando reservas') }
-  })
+(async function () {
+  const me = await guard(['RECEPCIONISTA', 'ADMIN']);
+  if (!me) return;
+
+  /* ── Fecha de hoy visible ── */
+  const fechaEl = document.getElementById('fecha-hoy');
+  if (fechaEl) {
+    const ahora = new Date();
+    fechaEl.textContent = ahora.toLocaleDateString('es-EC', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  /* ── Estado global ── */
+  let todasSalas = [];
+  let salaSeleccionadaId = null;
+  let filtroActivo = 'TODAS';
+
+  const ESTADO_LABEL = {
+    DISPONIBLE: 'Disponible', RESERVADA: 'Con Reserva',
+    EN_USO: 'En Uso', EN_LIMPIEZA: 'En Limpieza', MANTENIMIENTO: 'Mantenimiento'
+  };
+  const ESTADO_COLOR = {
+    DISPONIBLE: '#00C851', RESERVADA: '#4488FF',
+    EN_USO: '#FFA500', EN_LIMPIEZA: '#5599ff', MANTENIMIENTO: '#888'
+  };
+
+  /* ══════════════════════════════
+     NAVEGACIÓN
+  ══════════════════════════════ */
+  function mostrarSeccion(sec) {
+    document.getElementById('section-dia').style.display    = sec === 'dia'    ? '' : 'none';
+    document.getElementById('section-correo').style.display = sec === 'correo' ? '' : 'none';
+    document.getElementById('nav-dia').classList.toggle('active',    sec === 'dia');
+    document.getElementById('nav-correo').classList.toggle('active', sec === 'correo');
+    const titulos = { dia: 'Vista del Día', correo: 'Buscar por Correo' };
+    document.getElementById('main-title').textContent = titulos[sec] || 'Recepción';
+  }
+
+  document.getElementById('nav-dia').addEventListener('click', e => {
+    e.preventDefault(); mostrarSeccion('dia'); cargarPanelSalas();
+  });
+  document.getElementById('nav-correo').addEventListener('click', e => {
+    e.preventDefault(); mostrarSeccion('correo');
+  });
+
+  /* ══════════════════════════════
+     PANEL SALAS — VISTA DEL DÍA
+  ══════════════════════════════ */
+  async function cargarPanelSalas() {
+    try {
+      todasSalas = await api.get('/api/recepcion/panel-salas') || [];
+      renderListaSalas();
+      if (salaSeleccionadaId) cargarDetalleSala(salaSeleccionadaId);
+    } catch (e) {
+      toast.error('Error cargando salas');
+    }
+  }
+
+  function renderListaSalas() {
+    const list = document.getElementById('sala-list');
+    list.innerHTML = '';
+
+    const filtradas = filtroActivo === 'TODAS'
+      ? todasSalas
+      : todasSalas.filter(s => s.estadoPanel === filtroActivo);
+
+    document.getElementById('salas-count').textContent = `${filtradas.length} sala${filtradas.length !== 1 ? 's' : ''}`;
+
+    if (!filtradas.length) {
+      list.innerHTML = '<div class="sala-empty">Sin salas con este estado</div>';
+      return;
+    }
+
+    filtradas.forEach(sala => {
+      const item = document.createElement('div');
+      item.className = 'sala-item' + (sala.id === salaSeleccionadaId ? ' selected' : '');
+      item.dataset.salaId = sala.id;
+      const color = ESTADO_COLOR[sala.estadoPanel] || '#888';
+      item.innerHTML = `
+        <div class="sala-item-header">
+          <span class="sala-item-nombre">${esc(sala.nombre)}</span>
+          <span class="badge badge-${sala.estadoPanel.toLowerCase()}" style="font-size:10px;white-space:nowrap">
+            ${ESTADO_LABEL[sala.estadoPanel] || sala.estadoPanel}
+          </span>
+        </div>
+        <div class="sala-item-meta">${esc(sala.tipo)} · Cap. ${sala.capacidadMaxima}</div>`;
+      item.style.borderLeft = `3px solid ${color}33`;
+      item.addEventListener('click', () => seleccionarSala(sala));
+      list.appendChild(item);
+    });
+  }
+
+  function seleccionarSala(sala) {
+    salaSeleccionadaId = sala.id;
+    document.querySelectorAll('.sala-item').forEach(el =>
+      el.classList.toggle('selected', Number(el.dataset.salaId) === sala.id));
+    cargarDetalleSala(sala.id);
+  }
+
+  /* ── Detalle de sala ── */
+  async function cargarDetalleSala(salaId) {
+    const placeholder  = document.getElementById('detail-placeholder');
+    const detailWrap   = document.getElementById('detail-content');
+    const reservasList = document.getElementById('reservas-list');
+
+    placeholder.style.display = 'none';
+    detailWrap.style.display  = 'flex';
+    reservasList.innerHTML    = '<div style="color:var(--text-muted);font-size:13px;padding:20px 0">Cargando reservas...</div>';
+
+    const sala = todasSalas.find(s => s.id === salaId);
+    if (!sala) return;
+
+    document.getElementById('detail-nombre').textContent = sala.nombre;
+    document.getElementById('detail-meta').textContent   = `${sala.tipo} · Capacidad: ${sala.capacidadMaxima} personas`;
+    document.getElementById('detail-estado-badge').innerHTML =
+      `<span class="badge badge-${sala.estadoPanel.toLowerCase()}">${ESTADO_LABEL[sala.estadoPanel] || sala.estadoPanel}</span>`;
+
+    const btnDisponible = document.getElementById('btn-limpieza-disponible');
+    btnDisponible.style.display = sala.estadoPanel === 'EN_LIMPIEZA' ? '' : 'none';
+    btnDisponible.onclick = () => marcarDisponible(salaId);
+
+    document.getElementById('btn-refresh-detail').onclick = () => {
+      cargarPanelSalas();
+    };
+
+    try {
+      const reservas = await api.get(`/api/recepcion/salas/${salaId}/reservas-hoy`);
+      reservasList.innerHTML = '';
+
+      if (!reservas || reservas.length === 0) {
+        reservasList.innerHTML = '<div class="no-reservas">Sin reservas para hoy en esta sala</div>';
+        return;
+      }
+
+      reservas.forEach(res => reservasList.appendChild(crearTarjetaReserva(res)));
+    } catch (e) {
+      reservasList.innerHTML = '<div class="no-reservas">Error cargando reservas</div>';
+    }
+  }
+
+  function crearTarjetaReserva(res) {
+    const card = document.createElement('div');
+    card.className = 'reserva-item';
+    card.dataset.reservaId = res.id;
+
+    const hi = String(res.horaInicio).substring(0, 5);
+    const hf = String(res.horaFin).substring(0, 5);
+    const cliente = res.nombreCliente || '—';
+    const correo  = res.correoCliente || '';
+
+    card.innerHTML = `
+      <div class="reserva-item-top">
+        <span class="reserva-item-tiempo">${hi} – ${hf}</span>
+        <span class="badge badge-${res.estado.toLowerCase()}">${estadoLabel(res.estado)}</span>
+      </div>
+      <div class="reserva-item-cliente">
+        <strong>${esc(cliente)}</strong>${correo ? `<br><span style="font-size:11px">${esc(correo)}</span>` : ''}
+      </div>
+      <div class="reserva-item-btns" id="btns-${res.id}"></div>`;
+
+    renderBotonesReserva(card.querySelector(`#btns-${res.id}`), res);
+    return card;
+  }
+
+  function renderBotonesReserva(container, res) {
+    container.innerHTML = '';
+    if (res.estado === 'CONFIRMADA' || res.estado === 'PENDIENTE') {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-sm';
+      btn.textContent = 'Registrar Ingreso';
+      btn.addEventListener('click', () => accionIngreso(res.id, btn));
+      container.appendChild(btn);
+    } else if (res.estado === 'EN_USO') {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-secondary btn-sm';
+      btn.textContent = 'Registrar Salida';
+      btn.style.borderColor = 'rgba(255,165,0,0.4)';
+      btn.style.color = '#FFA500';
+      btn.addEventListener('click', () => abrirModalSalida(res));
+      container.appendChild(btn);
+    } else if (res.estado === 'FINALIZADA') {
+      container.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">✓ Finalizada</span>';
+    }
+  }
+
+  async function accionIngreso(reservaId, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Registrando...';
+    try {
+      await api.patch(`/api/recepcion/reservas/${reservaId}/ingreso`);
+      toast.success('Ingreso registrado correctamente');
+      await cargarPanelSalas();
+    } catch (err) {
+      toast.error(err.message || 'Error al registrar ingreso');
+      btn.disabled = false;
+      btn.textContent = 'Registrar Ingreso';
+    }
+  }
+
+  async function marcarDisponible(salaId) {
+    try {
+      await api.patch(`/api/recepcion/salas/${salaId}/disponible`);
+      toast.success('Sala marcada como disponible');
+      await cargarPanelSalas();
+    } catch (err) {
+      toast.error(err.message || 'Error al cambiar estado');
+    }
+  }
+
+  /* ── Filtros ── */
+  document.getElementById('filter-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filtroActivo = chip.dataset.filtro;
+    salaSeleccionadaId = null;
+    document.getElementById('detail-placeholder').style.display = '';
+    document.getElementById('detail-content').style.display     = 'none';
+    renderListaSalas();
+  });
+
+  document.getElementById('btn-refresh').addEventListener('click', cargarPanelSalas);
+
+  /* ══════════════════════════════
+     MODAL SALIDA
+  ══════════════════════════════ */
+  const modalSalida = document.getElementById('modal-salida');
+  let reservaEnSalida = null;
+
+  document.getElementById('modal-salida-close').addEventListener('click',  () => modalSalida.close());
+  document.getElementById('btn-cancelar-salida').addEventListener('click', () => modalSalida.close());
+
+  document.getElementById('limpieza-toggle').addEventListener('click', e => {
+    if (e.target.tagName !== 'INPUT') {
+      const chk = document.getElementById('chk-limpieza');
+      chk.checked = !chk.checked;
+    }
+  });
+
+  function abrirModalSalida(res) {
+    reservaEnSalida = res;
+    document.getElementById('chk-limpieza').checked = false;
+    document.getElementById('salida-sala-nombre').textContent  = res.sala?.nombre || '—';
+    document.getElementById('salida-cliente-nombre').textContent = res.nombreCliente || res.correoCliente || '—';
+    document.getElementById('salida-horario').textContent =
+      `${String(res.horaInicio).substring(0,5)} – ${String(res.horaFin).substring(0,5)}`;
+    modalSalida.showModal();
+  }
+
+  document.getElementById('btn-confirmar-salida').addEventListener('click', async () => {
+    if (!reservaEnSalida) return;
+    const btn = document.getElementById('btn-confirmar-salida');
+    btn.disabled = true;
+    btn.textContent = 'Procesando...';
+    const limpieza = document.getElementById('chk-limpieza').checked;
+    try {
+      await api.patch(`/api/recepcion/reservas/${reservaEnSalida.id}/salida?limpieza=${limpieza}`);
+      modalSalida.close();
+      toast.success(limpieza
+        ? 'Salida registrada — sala en proceso de limpieza'
+        : 'Salida registrada — sala disponible');
+      reservaEnSalida = null;
+      await cargarPanelSalas();
+    } catch (err) {
+      toast.error(err.message || 'Error al registrar salida');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Confirmar salida';
+    }
+  });
+
+  /* ══════════════════════════════
+     BUSCAR POR CORREO
+  ══════════════════════════════ */
+  document.getElementById('buscar-form').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const correoInp = document.getElementById('correo-cliente');
+    const errEl     = document.getElementById('err-correo');
+    const resultados = document.getElementById('resultados-correo');
+    errEl.textContent = '';
+    resultados.innerHTML = '';
+
+    if (!correoInp.value.trim()) {
+      errEl.textContent = 'Ingrese un correo electrónico';
+      correoInp.classList.add('error');
+      return;
+    }
+    correoInp.classList.remove('error');
+    resultados.innerHTML = '<div style="color:var(--text-muted);font-size:13px">Buscando...</div>';
+
+    try {
+      const reservas = await api.get('/api/recepcion/buscar-reserva?correoCliente=' + encodeURIComponent(correoInp.value.trim()));
+      resultados.innerHTML = '';
+      if (!reservas || reservas.length === 0) {
+        resultados.innerHTML = `
+          <div class="card" style="text-align:center;padding:28px">
+            <div style="font-size:32px;margin-bottom:10px">📭</div>
+            <div style="color:var(--text-muted)">No se encontraron reservas activas para ese correo</div>
+          </div>`;
+        return;
+      }
+      reservas.forEach(res => resultados.appendChild(crearTarjetaReserva(res)));
+    } catch (err) {
+      resultados.innerHTML = '';
+      toast.error(err.message || 'Error buscando reservas');
+    }
+  });
+
+  /* ── Helpers ── */
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = String(s ?? '');
+    return d.innerHTML;
+  }
+
+  function estadoLabel(estado) {
+    const map = {
+      CONFIRMADA: 'Confirmada', PENDIENTE: 'Pendiente',
+      EN_USO: 'En Uso', FINALIZADA: 'Finalizada', CANCELADA: 'Cancelada'
+    };
+    return map[estado] || estado;
+  }
+
+  /* ── Init ── */
+  await cargarPanelSalas();
 })();
