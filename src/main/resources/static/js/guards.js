@@ -14,5 +14,3 @@ async function guard(rolesPermitidos){
     return me;
   }catch(e){location.href='/html/login.html';return null}
 }
-/* guards.js - Placeholder Sprint 1 */
-/* TODO: implementar en el Paso 5 */

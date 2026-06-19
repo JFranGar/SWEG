@@ -2,7 +2,7 @@
 
 Equipo: Clean Code Crew
 
-Stack: Spring Boot 4.0.6 + Java 21 + PostgreSQL + Vanilla JS
+Stack: Spring Boot 4.0.6 + Java 25 + PostgreSQL + Vanilla JS
 
 Sprint actual: Sprint 1 — HU1 Login, HU2 Gestión de Salas, HU4 Reserva
 

@@ -55,5 +55,3 @@ window.pintarErroresCampo = function (err, mapeo = {}) {
   });
 };
 /* end api.js */
-/* api.js - Placeholder Sprint 1 */
-/* TODO: implementar en el Paso 5 */

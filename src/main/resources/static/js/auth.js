@@ -66,5 +66,3 @@
     form.addEventListener('submit',onSubmit);
   })();
 })();
-/* auth.js - Placeholder Sprint 1 */
-/* TODO: implementar en el Paso 5 */

@@ -59,6 +59,9 @@ public class Reserva {
     @Column(name = "fecha_ingreso")
     private LocalDateTime fechaIngreso;
 
+    @Column(name = "cantidad_personas")
+    private Integer cantidadPersonas;
+
     /** CA-HU04-04: Campos obligatorios. */
     public void validarCamposObligatorios() {
         if (sala == null || cliente == null || fecha == null || horaInicio == null || horaFin == null) {

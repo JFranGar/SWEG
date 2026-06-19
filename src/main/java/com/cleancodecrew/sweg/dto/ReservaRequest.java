@@ -1,15 +1,12 @@
 package com.cleancodecrew.sweg.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * DTO de entrada para HU4 Reserva de Sala.
- * HU4 CA4: campos obligatorios via Bean Validation.
- */
 @Data
 public class ReservaRequest {
 	@NotNull(message = "Seleccione una sala")
@@ -23,4 +20,8 @@ public class ReservaRequest {
 
 	@NotNull(message = "La hora de fin es obligatoria")
 	private LocalTime horaFin;
+
+	@NotNull(message = "Indique la cantidad de personas")
+	@Min(value = 1, message = "Debe ser al menos 1 persona")
+	private Integer cantidadPersonas;
 }

@@ -11,5 +11,3 @@
 .main{flex:1;padding:28px 36px;overflow:auto}
 .main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .user-chip{background:var(--bg-panel-alt);padding:6px 10px;border-radius:999px;border:1px solid var(--border-soft)}
-/* dashboard.css - Placeholder Sprint 1 */
-/* TODO: implementar en el Paso 5 */
