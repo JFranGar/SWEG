@@ -1,12 +1,15 @@
 package com.cleancodecrew.sweg.controller;
 
+import com.cleancodecrew.sweg.config.AuthInterceptor;
 import com.cleancodecrew.sweg.dto.ApiError;
 import com.cleancodecrew.sweg.dto.PanelSalaResponse;
 import com.cleancodecrew.sweg.dto.ReservaResponse;
 import com.cleancodecrew.sweg.model.EstadoSala;
 import com.cleancodecrew.sweg.model.Reserva;
+import com.cleancodecrew.sweg.model.Usuario;
 import com.cleancodecrew.sweg.repository.ReservaRepository;
 import com.cleancodecrew.sweg.repository.SalaRepository;
+import com.cleancodecrew.sweg.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -15,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -31,10 +35,22 @@ public class RecepcionController {
 
     private final ReservaRepository reservaRepo;
     private final SalaRepository salaRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    public RecepcionController(ReservaRepository reservaRepo, SalaRepository salaRepository) {
+    public RecepcionController(ReservaRepository reservaRepo, SalaRepository salaRepository,
+                               UsuarioRepository usuarioRepository) {
         this.reservaRepo = reservaRepo;
         this.salaRepository = salaRepository;
+        this.usuarioRepository = usuarioRepository;
+    }
+
+    /** Recupera el usuario (recepcionista/admin) que ejecuta la accion, para la trazabilidad. */
+    private Usuario operadorActual(HttpServletRequest req) {
+        HttpSession session = req.getSession(false);
+        if (session == null) return null;
+        Object idObj = session.getAttribute(AuthInterceptor.SESSION_USER_ID);
+        if (idObj == null) return null;
+        return usuarioRepository.findById((Long) idObj).orElse(null);
     }
 
     /** CA-HU07-01, CA-HU07-04: busca reservas activas del dia por cliente. */
@@ -76,15 +92,21 @@ public class RecepcionController {
         return ResponseEntity.ok(reservas.stream().map(ReservaResponse::de).toList());
     }
 
-    /** CA-HU07-02, CA-HU07-03: registra ingreso y persiste el estado de la sala. */
+    /** CA-HU07-02, CA-HU07-03, CA-HU11-02: registra ingreso (check-in) y persiste el estado de la sala. */
     @Transactional
     @PatchMapping("/reservas/{id}/ingreso")
-    public ResponseEntity<?> registrarIngreso(@PathVariable Long id) {
-        Reserva r = reservaRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reserva no existe"));
-        r.registrarIngreso(LocalDateTime.now());
+    public ResponseEntity<?> registrarIngreso(@PathVariable Long id, HttpServletRequest req) {
+        Reserva r = reservaRepo.findById(id).orElse(null);
+        if (r == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiError.of(404, "Reserva no encontrada", req.getRequestURI()));
+        }
+        Usuario operador = operadorActual(req);
+        r.registrarIngreso(LocalDateTime.now(), operador);
         reservaRepo.save(r);
         salaRepository.save(r.getSala());
+        log.info("Recepcion: check-in reserva={} operador='{}'",
+                id, operador != null ? operador.getCorreo() : "?");
         return ResponseEntity.ok(ReservaResponse.de(r));
     }
 
@@ -103,16 +125,17 @@ public class RecepcionController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiError.of(404, "Reserva no encontrada", req.getRequestURI()));
         }
+        Usuario operador = operadorActual(req);
         try {
-            r.registrarSalida(limpieza, LocalDateTime.now());
+            r.registrarSalida(limpieza, LocalDateTime.now(), operador);
         } catch (IllegalStateException ex) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiError.of(409, ex.getMessage(), req.getRequestURI()));
         }
         reservaRepo.save(r);
         salaRepository.save(r.getSala());
-        log.info("Recepcion: salida registrada reserva={} limpieza={} sala='{}'",
-                id, limpieza, r.getSala().getNombre());
+        log.info("Recepcion: check-out reserva={} limpieza={} sala='{}' operador='{}'",
+                id, limpieza, r.getSala().getNombre(), operador != null ? operador.getCorreo() : "?");
         return ResponseEntity.ok(ReservaResponse.de(r));
     }
 

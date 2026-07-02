@@ -11,3 +11,66 @@
 .main{flex:1;padding:28px 36px;overflow:auto}
 .main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .user-chip{background:var(--bg-panel-alt);padding:6px 10px;border-radius:999px;border:1px solid var(--border-soft)}
+
+/* ══ Dashboard: tarjetas KPI ══ */
+.dash-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:22px}
+.stat-card{background:var(--bg-panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s,border-color .15s}
+.stat-card:hover{transform:translateY(-2px);border-color:rgba(255,215,0,0.25)}
+.stat-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent,var(--gold))}
+.stat-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:800;line-height:1;color:var(--text-primary);font-variant-numeric:tabular-nums}
+.stat-hint{font-size:11px;color:var(--text-muted);margin-top:8px}
+.stat-chip-row{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.stat-mini{font-size:11px;color:var(--text-muted)}
+.stat-mini b{color:var(--text-primary);font-weight:700}
+
+/* ══ Dashboard: gráficas ══ */
+.dash-charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px}
+.chart-card{background:var(--bg-panel);border:1px solid var(--border-soft);border-radius:var(--radius);padding:16px 18px}
+.chart-card.wide{grid-column:1 / -1}
+.chart-title{font-size:13px;font-weight:700;color:var(--text-primary);margin:0 0 14px}
+.chart-title .chart-sub{font-size:11px;color:var(--text-muted);font-weight:400}
+.chart-box{width:100%;min-height:200px;position:relative}
+.chart-box svg{width:100%;height:auto;display:block;overflow:visible}
+.chart-card.wide .chart-box svg{max-height:340px}
+.chart-empty{color:var(--text-muted);font-size:13px;text-align:center;padding:40px 0}
+
+/* Marcas SVG */
+.bar-rect{transition:opacity .12s}
+.bar-rect:hover{opacity:0.82;cursor:pointer}
+.donut-seg{transition:opacity .12s;cursor:pointer}
+.donut-seg:hover{opacity:0.82}
+.chart-axis{stroke:var(--border-subtle);stroke-width:1}
+.chart-grid{stroke:var(--border-soft);stroke-width:1;stroke-dasharray:2 4}
+.chart-tick{fill:var(--text-muted);font-size:10px}
+.bar-val{fill:var(--text-primary);font-size:10px;font-weight:700}
+.area-line{fill:none;stroke:var(--gold);stroke-width:2}
+.area-fill{fill:rgba(255,215,0,0.10)}
+.area-dot{fill:var(--gold);stroke:var(--bg-panel);stroke-width:2;cursor:pointer}
+
+/* Leyenda */
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted)}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Tooltip flotante */
+.chart-tip{position:fixed;pointer-events:none;background:#000;border:1px solid var(--border-subtle);border-radius:8px;
+  padding:7px 10px;font-size:12px;color:var(--text-primary);z-index:9998;opacity:0;transition:opacity .1s;
+  box-shadow:0 8px 24px rgba(0,0,0,0.5);white-space:nowrap}
+.chart-tip.show{opacity:1}
+.chart-tip .tip-label{color:var(--text-muted);font-size:11px}
+.chart-tip .tip-val{font-weight:700}
+
+/* ══ Actividad reciente ══ */
+.actividad-list{display:flex;flex-direction:column}
+.actividad-item{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--border-soft)}
+.actividad-item:last-child{border-bottom:none}
+.act-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.act-reserva{background:rgba(68,136,255,0.12);color:#6699ff}
+.act-check_in{background:rgba(0,200,81,0.12);color:#00c851}
+.act-check_out{background:rgba(255,165,0,0.12);color:#FFA500}
+.act-cancelacion{background:rgba(255,68,68,0.10);color:#FF4444}
+.act-body{flex:1;min-width:0}
+.act-desc{font-size:13px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-time{font-size:11px;color:var(--text-muted);margin-top:2px}
+.act-empty{color:var(--text-muted);font-size:13px;text-align:center;padding:24px 0}

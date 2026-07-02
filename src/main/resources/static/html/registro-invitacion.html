@@ -1,0 +1,69 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Activar cuenta - SWGEC</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body{background:var(--bg-base)}
+    .inv-banner{background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.25);border-radius:10px;
+      padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text-primary)}
+    .inv-banner b{color:var(--gold)}
+    .inv-field-lock{background:var(--bg-panel-alt);opacity:0.85}
+    #estado-carga{text-align:center;color:var(--text-muted);padding:20px 0}
+    #bloque-invalido{display:none;text-align:center}
+    #bloque-invalido .ico{font-size:44px;margin-bottom:10px}
+  </style>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-card">
+      <div class="login-brand">
+        <h1>SWGEC</h1>
+        <p>Activación de cuenta interna</p>
+      </div>
+
+      <div id="estado-carga">Validando invitación...</div>
+
+      <div id="bloque-invalido">
+        <div class="ico">⚠️</div>
+        <p id="invalido-msg" style="color:var(--text-muted);margin-bottom:16px">Esta invitación no es válida.</p>
+        <a href="/html/login.html" class="btn btn-secondary full">Volver al inicio de sesión</a>
+      </div>
+
+      <form id="inv-form" novalidate style="display:none">
+        <div class="inv-banner">
+          Has sido invitado como <b id="rol-invitado">—</b>. Completa tus datos para activar tu cuenta.
+        </div>
+        <div class="field">
+          <label for="correo">Correo</label>
+          <input id="correo" class="input inv-field-lock" type="email" readonly>
+        </div>
+        <div class="field">
+          <label for="nombre">Nombre completo</label>
+          <input id="nombre" class="input" type="text" autocomplete="name">
+          <div id="err-nombre" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" class="input" type="password" autocomplete="new-password">
+          <div id="err-contrasena" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="contrasena2">Confirmar contraseña</label>
+          <input id="contrasena2" class="input" type="password" autocomplete="new-password">
+          <div id="err-contrasena2" class="error-msg"></div>
+        </div>
+        <button id="btn-activar" type="submit" class="btn btn-primary full">Activar cuenta</button>
+      </form>
+    </section>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/registro-invitacion.js"></script>
+</body>
+</html>

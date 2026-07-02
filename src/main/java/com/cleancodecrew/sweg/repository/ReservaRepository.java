@@ -137,5 +137,18 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 		@org.springframework.data.repository.query.Param("salaId") Long salaId,
 		@org.springframework.data.repository.query.Param("fecha")  LocalDate fecha
 	);
+
+	/** CA-HU10-01: todas las reservas con sala y cliente precargados para agregaciones del dashboard. */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+	""")
+	List<Reserva> findAllDetallado();
+
+	/** CA-HU11-01: eventos de acceso (check-in/check-out) con datos precargados para el historial. */
+	@org.springframework.data.jpa.repository.Query("""
+		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+		WHERE r.fechaIngreso IS NOT NULL OR r.fechaSalida IS NOT NULL
+	""")
+	List<Reserva> findConAccesos();
 }
 

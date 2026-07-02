@@ -77,9 +77,12 @@
     <aside class="sidebar">
       <div class="brand"><div class="brand-dot"></div><div class="brand-text">SWGEC</div></div>
       <nav class="nav">
+        <a id="nav-dashboard" class="active" href="#">Dashboard</a>
         <a id="nav-panel" href="#">Panel de Control</a>
-        <a id="nav-salas" class="active" href="#">Gestión de Salas</a>
+        <a id="nav-salas" href="#">Gestión de Salas</a>
         <a id="nav-usuarios" href="#">Gestión de Usuarios</a>
+        <a id="nav-invitaciones" href="#">Invitaciones</a>
+        <a id="nav-accesos" href="#">Historial de Accesos</a>
       </nav>
       <div class="sidebar-footer">
         <div id="user-rol" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
@@ -87,7 +90,48 @@
       </div>
     </aside>
     <main class="main container">
-      <div class="main-header"><h2 id="main-title">Gestión de Salas</h2></div>
+      <div class="main-header"><h2 id="main-title">Dashboard</h2></div>
+
+      <!-- ══ SECCIÓN DASHBOARD ══ -->
+      <div id="section-dashboard">
+        <div class="section-bar">
+          <h3>Resumen del sistema</h3>
+          <button id="btn-refresh-dashboard" class="btn btn-secondary btn-sm">↻ Actualizar</button>
+        </div>
+        <div id="dash-cards" class="dash-cards"></div>
+
+        <div class="dash-charts">
+          <div class="chart-card">
+            <h4 class="chart-title">Reservas por día <span class="chart-sub">(últimos 7 días)</span></h4>
+            <div id="chart-reservas-dia" class="chart-box"></div>
+          </div>
+          <div class="chart-card">
+            <h4 class="chart-title">Reservas por estado</h4>
+            <div id="chart-estados" class="chart-box"></div>
+          </div>
+          <div class="chart-card">
+            <h4 class="chart-title">Uso de espacios por tipo</h4>
+            <div id="chart-tipos" class="chart-box"></div>
+          </div>
+          <div class="chart-card">
+            <h4 class="chart-title">Check-in / Check-out <span class="chart-sub">(últimos 7 días)</span></h4>
+            <div id="chart-accesos" class="chart-box"></div>
+          </div>
+          <div class="chart-card">
+            <h4 class="chart-title">Clientes con mayor actividad</h4>
+            <div id="chart-clientes" class="chart-box"></div>
+          </div>
+          <div class="chart-card wide">
+            <h4 class="chart-title">Ocupación del coworking por horario</h4>
+            <div id="chart-horarios" class="chart-box"></div>
+          </div>
+        </div>
+
+        <div class="chart-card" style="margin-top:16px">
+          <h4 class="chart-title">Actividad reciente</h4>
+          <div id="dash-actividad" class="actividad-list"></div>
+        </div>
+      </div>
 
       <!-- ══ SECCIÓN PANEL DE CONTROL ══ -->
       <div id="section-panel" style="display:none">
@@ -100,7 +144,7 @@
       </div>
 
       <!-- ══ SECCIÓN SALAS ══ -->
-      <div id="section-salas">
+      <div id="section-salas" style="display:none">
         <div class="section-bar">
           <h3>Salas registradas</h3>
           <button id="btn-nueva-sala" class="btn btn-primary btn-sm">+ Nueva Sala</button>
@@ -136,8 +180,105 @@
           </div>
         </div>
       </div>
+
+      <!-- ══ SECCIÓN INVITACIONES ══ -->
+      <div id="section-invitaciones" style="display:none">
+        <div class="section-bar">
+          <h3>Invitaciones de cuentas internas</h3>
+          <button id="btn-nueva-invitacion" class="btn btn-primary btn-sm">+ Nueva Invitación</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px;max-width:640px">
+          Las cuentas <strong>Recepcionista</strong> y <strong>Administrador</strong> solo se crean por invitación segura.
+          Cada invitación genera un enlace de un solo uso con expiración. Comparte el enlace con la persona invitada.
+        </p>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Rol</th><th>Correo</th><th>Estado</th><th>Creada por</th><th>Expira</th><th>Acciones</th></tr></thead>
+            <tbody id="tabla-invitaciones"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ SECCIÓN HISTORIAL DE ACCESOS ══ -->
+      <div id="section-accesos" style="display:none">
+        <div class="section-bar">
+          <h3>Historial de Check-in / Check-out</h3>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="filter-chips" id="accesos-chips" style="display:flex;gap:6px">
+              <button class="chip active" data-filtro="TODOS">Todos</button>
+              <button class="chip" data-filtro="CHECK_IN">Check-in</button>
+              <button class="chip" data-filtro="CHECK_OUT">Check-out</button>
+            </div>
+            <button id="btn-refresh-accesos" class="btn btn-secondary btn-sm">↻ Actualizar</button>
+          </div>
+        </div>
+        <div class="card">
+          <table class="table">
+            <thead><tr><th>Tipo</th><th>Fecha y hora</th><th>Sala</th><th>Cliente</th><th>Horario</th><th>Registrado por</th></tr></thead>
+            <tbody id="tabla-accesos"></tbody>
+          </table>
+          <div class="pagination">
+            <button id="prev-accesos" class="btn btn-secondary btn-sm" disabled>‹ Anterior</button>
+            <span id="info-accesos" class="page-info"></span>
+            <button id="next-accesos" class="btn btn-secondary btn-sm" disabled>Siguiente ›</button>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
+
+  <!-- ══ MODAL NUEVA INVITACIÓN ══ -->
+  <dialog id="modal-invitacion">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title">Nueva Invitación</span>
+        <button type="button" class="btn-close" id="modal-invitacion-close" aria-label="Cerrar">×</button>
+      </div>
+      <form id="invitacion-form">
+        <div class="field"><label>Rol de la cuenta</label>
+          <select id="inv-rol" class="select">
+            <option value="">Seleccione...</option>
+            <option value="RECEPCIONISTA">RECEPCIONISTA</option>
+            <option value="ADMIN">ADMIN</option>
+          </select>
+          <div id="err-inv-rol" class="error-msg"></div>
+        </div>
+        <div class="field"><label>Correo del invitado</label>
+          <input id="inv-correo" type="email" class="input" autocomplete="off" placeholder="persona@swgec.ec">
+          <div id="err-inv-correo" class="error-msg"></div>
+        </div>
+        <div class="field"><label>Validez (horas)</label>
+          <input id="inv-horas" type="number" min="1" max="720" class="input" value="48">
+          <div id="err-inv-horas" class="error-msg"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-inv-guardar" class="btn btn-primary">Generar invitación</button>
+          <button type="button" id="btn-cancelar-invitacion" class="btn btn-secondary">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ══ MODAL ENLACE DE INVITACIÓN ══ -->
+  <dialog id="modal-invitacion-link">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <span class="modal-title">Invitación generada</span>
+        <button type="button" class="btn-close" id="modal-inv-link-close" aria-label="Cerrar">×</button>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+        Comparte este enlace con la persona invitada. Es de <strong>un solo uso</strong> y expira automáticamente.
+      </p>
+      <div class="field">
+        <label>Enlace de registro</label>
+        <input id="inv-link-input" class="input" readonly style="font-size:12px">
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-copiar-link" class="btn btn-primary">Copiar enlace</button>
+        <button type="button" id="btn-cerrar-inv-link" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- ══ MODAL SALA ══ -->
   <dialog id="modal-sala">

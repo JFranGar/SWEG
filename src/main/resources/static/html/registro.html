@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Login - SWGEC</title>
+  <title>Crear cuenta - SWGEC</title>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/login.css">
@@ -15,18 +15,13 @@
     <section class="login-card">
       <div class="login-brand">
         <h1>SWGEC</h1>
-        <p>Gestión de Espacios de Coworking — Sprint 1</p>
+        <p>Crear cuenta de cliente</p>
       </div>
-      <form id="login-form" novalidate>
+      <form id="registro-form" novalidate>
         <div class="field">
-          <label>Seleccionar rol</label>
-          <div class="role-grid">
-            <div class="role-card" data-rol="ADMIN"><span class="role-icon">👑</span>Administrador</div>
-            <div class="role-card" data-rol="RECEPCIONISTA"><span class="role-icon">🛎️</span>Recepcionista</div>
-            <div class="role-card" data-rol="CLIENTE"><span class="role-icon">👤</span>Cliente</div>
-          </div>
-          <input type="hidden" id="rol-seleccionado" name="rolSeleccionado">
-          <div id="err-rol" class="error-msg"></div>
+          <label for="nombre">Nombre completo</label>
+          <input id="nombre" class="input" type="text" autocomplete="name">
+          <div id="err-nombre" class="error-msg"></div>
         </div>
         <div class="field">
           <label for="correo">Correo</label>
@@ -35,19 +30,23 @@
         </div>
         <div class="field">
           <label for="contrasena">Contraseña</label>
-          <input id="contrasena" class="input" type="password" autocomplete="current-password">
+          <input id="contrasena" class="input" type="password" autocomplete="new-password">
           <div id="err-contrasena" class="error-msg"></div>
         </div>
-        <button id="btn-login" type="submit" class="btn btn-primary full">Ingresar</button>
+        <div class="field">
+          <label for="contrasena2">Confirmar contraseña</label>
+          <input id="contrasena2" class="input" type="password" autocomplete="new-password">
+          <div id="err-contrasena2" class="error-msg"></div>
+        </div>
+        <button id="btn-registro" type="submit" class="btn btn-primary full">Crear cuenta</button>
       </form>
       <div class="login-footer" style="text-align:center;margin-top:14px">
-        ¿No tienes cuenta? <a href="/html/registro.html">Regístrate como cliente</a>
+        ¿Ya tienes cuenta? <a href="/html/login.html">Inicia sesión</a>
       </div>
-      <div class="login-footer">Usuarios demo: admin@swgec.ec / cliente@swgec.ec (contraseña demo)</div>
     </section>
   </main>
   <div id="toast-container"></div>
   <script src="/js/api.js"></script>
-  <script src="/js/auth.js"></script>
+  <script src="/js/registro.js"></script>
 </body>
 </html>
