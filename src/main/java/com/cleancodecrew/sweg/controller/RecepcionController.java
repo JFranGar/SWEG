@@ -1,6 +1,7 @@
 package com.cleancodecrew.sweg.controller;
 
 import com.cleancodecrew.sweg.config.AuthInterceptor;
+import com.cleancodecrew.sweg.dto.AccesoResponse;
 import com.cleancodecrew.sweg.dto.ApiError;
 import com.cleancodecrew.sweg.dto.PanelSalaResponse;
 import com.cleancodecrew.sweg.dto.ReservaResponse;
@@ -21,7 +22,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -144,6 +147,32 @@ public class RecepcionController {
     public ResponseEntity<List<ReservaResponse>> salasEnUso() {
         return ResponseEntity.ok(reservaRepo.findTodasEnUso()
                 .stream().map(ReservaResponse::de).toList());
+    }
+
+    /**
+     * CA-HU11-01, CA-HU11-03: Historial de check-in / check-out consultable desde el módulo
+     * de Recepción (el recepcionista, responsable de los accesos, conserva la trazabilidad).
+     */
+    @GetMapping("/accesos")
+    public ResponseEntity<List<AccesoResponse>> accesos() {
+        List<AccesoResponse> eventos = new ArrayList<>();
+        for (Reserva r : reservaRepo.findConAccesos()) {
+            String sala = r.getSala().getNombre();
+            String cliente = r.getCliente() != null ? r.getCliente().getNombre() : null;
+            String correo = r.getCliente() != null ? r.getCliente().getCorreo() : null;
+            if (r.getFechaIngreso() != null) {
+                eventos.add(new AccesoResponse(r.getId(), "CHECK_IN", r.getFechaIngreso(), sala, cliente, correo,
+                        r.getIngresoPor() != null ? r.getIngresoPor().getNombre() : null,
+                        r.getHoraInicio(), r.getHoraFin(), r.getEstado().name()));
+            }
+            if (r.getFechaSalida() != null) {
+                eventos.add(new AccesoResponse(r.getId(), "CHECK_OUT", r.getFechaSalida(), sala, cliente, correo,
+                        r.getSalidaPor() != null ? r.getSalidaPor().getNombre() : null,
+                        r.getHoraInicio(), r.getHoraFin(), r.getEstado().name()));
+            }
+        }
+        eventos.sort(Comparator.comparing(AccesoResponse::fecha).reversed());
+        return ResponseEntity.ok(eventos);
     }
 
     /**

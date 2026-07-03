@@ -26,12 +26,13 @@
   /* ══════════════════════════════
      NAVEGACIÓN
   ══════════════════════════════ */
+  const SECCIONES = ['dia', 'correo', 'accesos'];
   function mostrarSeccion(sec) {
-    document.getElementById('section-dia').style.display    = sec === 'dia'    ? '' : 'none';
-    document.getElementById('section-correo').style.display = sec === 'correo' ? '' : 'none';
-    document.getElementById('nav-dia').classList.toggle('active',    sec === 'dia');
-    document.getElementById('nav-correo').classList.toggle('active', sec === 'correo');
-    const titulos = { dia: 'Vista del Día', correo: 'Buscar por Correo' };
+    SECCIONES.forEach(s => {
+      document.getElementById('section-' + s).style.display = s === sec ? '' : 'none';
+      document.getElementById('nav-' + s).classList.toggle('active', s === sec);
+    });
+    const titulos = { dia: 'Vista del Día', correo: 'Buscar por Correo', accesos: 'Check-in / Check-out' };
     document.getElementById('main-title').textContent = titulos[sec] || 'Recepción';
   }
 
@@ -40,6 +41,9 @@
   });
   document.getElementById('nav-correo').addEventListener('click', e => {
     e.preventDefault(); mostrarSeccion('correo');
+  });
+  document.getElementById('nav-accesos').addEventListener('click', e => {
+    e.preventDefault(); mostrarSeccion('accesos'); cargarAccesos();
   });
 
   /* ══════════════════════════════
@@ -306,11 +310,116 @@
     }
   });
 
+  /* ══════════════════════════════
+     HISTORIAL DE ACCESOS (check-in / check-out)
+  ══════════════════════════════ */
+  let listaAccesos = [], filtroAccesos = 'TODOS';
+
+  document.getElementById('accesos-chips').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip) return;
+    document.querySelectorAll('#accesos-chips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    filtroAccesos = chip.dataset.filtro;
+    renderAccesos();
+  });
+  document.getElementById('btn-refresh-accesos').addEventListener('click', cargarAccesos);
+
+  async function cargarAccesos() {
+    const tbody = document.getElementById('tabla-accesos');
+    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Cargando...</td></tr>';
+    try {
+      listaAccesos = await api.get('/api/recepcion/accesos') || [];
+      renderAccesosResumen();
+      renderAccesos();
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Error cargando historial</td></tr>';
+    }
+  }
+
+  /* Tarjetas "Check-ins/Check-outs hoy" + gráfica de 7 días, calculadas desde los accesos. */
+  function mismoDia(iso, ref) {
+    const d = new Date(iso);
+    return !isNaN(d) && d.getFullYear() === ref.getFullYear()
+      && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate();
+  }
+
+  function renderAccesosResumen() {
+    const hoy = new Date();
+    let ciHoy = 0, coHoy = 0;
+    listaAccesos.forEach(a => {
+      if (mismoDia(a.fecha, hoy)) {
+        if (a.tipo === 'CHECK_IN') ciHoy++; else if (a.tipo === 'CHECK_OUT') coHoy++;
+      }
+    });
+    document.getElementById('stat-checkins-hoy').textContent = ciHoy;
+    document.getElementById('stat-checkouts-hoy').textContent = coHoy;
+
+    // Serie de los últimos 7 días
+    const dias = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      let cin = 0, cout = 0;
+      listaAccesos.forEach(a => {
+        if (mismoDia(a.fecha, d)) { if (a.tipo === 'CHECK_IN') cin++; else if (a.tipo === 'CHECK_OUT') cout++; }
+      });
+      dias.push({
+        label: String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0'),
+        cin, cout
+      });
+    }
+    const max = Math.max(1, ...dias.map(d => Math.max(d.cin, d.cout)));
+    const cont = document.getElementById('accesos-chart');
+    cont.innerHTML = '';
+    dias.forEach(d => {
+      const col = document.createElement('div');
+      col.style.cssText = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:6px';
+      col.innerHTML = `
+        <div style="flex:1;display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center">
+          <div title="Check-in: ${d.cin}" style="width:14px;background:#00C851;border-radius:3px 3px 0 0;height:${d.cin / max * 100}%;min-height:${d.cin > 0 ? 4 : 0}px"></div>
+          <div title="Check-out: ${d.cout}" style="width:14px;background:#FFA500;border-radius:3px 3px 0 0;height:${d.cout / max * 100}%;min-height:${d.cout > 0 ? 4 : 0}px"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text-muted);white-space:nowrap">${d.label}</div>`;
+      cont.appendChild(col);
+    });
+  }
+
+  function renderAccesos() {
+    const tbody = document.getElementById('tabla-accesos');
+    const filtrados = filtroAccesos === 'TODOS' ? listaAccesos : listaAccesos.filter(a => a.tipo === filtroAccesos);
+    tbody.innerHTML = '';
+    if (!filtrados.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Sin accesos registrados</td></tr>';
+      return;
+    }
+    filtrados.forEach(a => {
+      const esIn = a.tipo === 'CHECK_IN';
+      const hi = String(a.horaInicio || '').substring(0, 5);
+      const hf = String(a.horaFin || '').substring(0, 5);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="badge badge-${esIn ? 'disponible' : 'en_uso'}">${esIn ? '→ Check-in' : '← Check-out'}</span></td>
+        <td style="font-size:12px">${fechaHora(a.fecha)}</td>
+        <td>${esc(a.salaNombre)}</td>
+        <td style="font-size:12px">${esc(a.clienteNombre || a.clienteCorreo || '—')}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${hi} – ${hf}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${esc(a.operador || '—')}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
   /* ── Helpers ── */
   function esc(s) {
     const d = document.createElement('div');
     d.textContent = String(s ?? '');
     return d.innerHTML;
+  }
+
+  function fechaHora(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d)) return String(iso).replace('T', ' ').substring(0, 16);
+    return d.toLocaleString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   }
 
   function estadoLabel(estado) {

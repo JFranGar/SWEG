@@ -54,7 +54,7 @@
   }
 
   /* ── Navegación ── */
-  const SECCIONES = ['dashboard', 'panel', 'salas', 'usuarios', 'invitaciones', 'accesos'];
+  const SECCIONES = ['dashboard', 'panel', 'salas', 'usuarios', 'invitaciones'];
   function mostrarSeccion(sec) {
     SECCIONES.forEach(s => {
       document.getElementById('section-' + s).style.display = s === sec ? '' : 'none';
@@ -62,7 +62,7 @@
     });
     const titulos = {
       dashboard: 'Dashboard', panel: 'Panel de Control', salas: 'Gestión de Salas',
-      usuarios: 'Gestión de Usuarios', invitaciones: 'Invitaciones', accesos: 'Historial de Accesos'
+      usuarios: 'Gestión de Usuarios', invitaciones: 'Invitaciones'
     };
     document.getElementById('main-title').textContent = titulos[sec];
   }
@@ -83,9 +83,6 @@
   });
   document.getElementById('nav-invitaciones').addEventListener('click', e => {
     e.preventDefault(); mostrarSeccion('invitaciones'); cargarInvitaciones();
-  });
-  document.getElementById('nav-accesos').addEventListener('click', e => {
-    e.preventDefault(); mostrarSeccion('accesos'); cargarAccesos();
   });
 
   /* ══════════════════════════════
@@ -762,61 +759,6 @@
       });
     }
   });
-
-  /* ══════════════════════════════
-     HISTORIAL DE ACCESOS (check-in/out)
-  ══════════════════════════════ */
-  let listaAccesos = [], pagAccesos = 0, filtroAccesos = 'TODOS';
-
-  document.getElementById('accesos-chips').addEventListener('click', e => {
-    const chip = e.target.closest('.chip');
-    if (!chip) return;
-    document.querySelectorAll('#accesos-chips .chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    filtroAccesos = chip.dataset.filtro;
-    pagAccesos = 0;
-    renderAccesos();
-  });
-  document.getElementById('btn-refresh-accesos').addEventListener('click', cargarAccesos);
-  document.getElementById('prev-accesos').addEventListener('click', () => { if (pagAccesos > 0) { pagAccesos--; renderAccesos(); } });
-  document.getElementById('next-accesos').addEventListener('click', () => { pagAccesos++; renderAccesos(); });
-
-  async function cargarAccesos() {
-    const tbody = document.getElementById('tabla-accesos');
-    tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Cargando...</td></tr>';
-    try {
-      listaAccesos = await api.get('/api/admin/accesos') || [];
-      pagAccesos = 0;
-      renderAccesos();
-    } catch (e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Error cargando historial</td></tr>'; }
-  }
-
-  function renderAccesos() {
-    const tbody = document.getElementById('tabla-accesos');
-    const filtrados = filtroAccesos === 'TODOS' ? listaAccesos : listaAccesos.filter(a => a.tipo === filtroAccesos);
-    const slice = filtrados.slice(pagAccesos * PAGE, (pagAccesos + 1) * PAGE);
-    tbody.innerHTML = '';
-    if (!slice.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted)">Sin accesos registrados</td></tr>';
-      actualizarPag('accesos', 0, 0);
-      return;
-    }
-    slice.forEach(a => {
-      const esIn = a.tipo === 'CHECK_IN';
-      const tr = document.createElement('tr');
-      const hi = String(a.horaInicio || '').substring(0, 5);
-      const hf = String(a.horaFin || '').substring(0, 5);
-      tr.innerHTML = `
-        <td><span class="badge badge-${esIn ? 'disponible' : 'en_uso'}">${esIn ? '→ Check-in' : '← Check-out'}</span></td>
-        <td style="font-size:12px">${fechaHora(a.fecha)}</td>
-        <td>${esc(a.salaNombre)}</td>
-        <td style="font-size:12px">${esc(a.clienteNombre || a.clienteCorreo || '—')}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${hi} – ${hf}</td>
-        <td style="font-size:12px;color:var(--text-muted)">${esc(a.operador || '—')}</td>`;
-      tbody.appendChild(tr);
-    });
-    actualizarPag('accesos', pagAccesos, filtrados.length);
-  }
 
   /* ── Helpers compartidos ── */
   function escSvg(s) { return String(s ?? '').replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c])); }

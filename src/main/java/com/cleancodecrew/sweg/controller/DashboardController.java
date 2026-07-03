@@ -1,6 +1,5 @@
 package com.cleancodecrew.sweg.controller;
 
-import com.cleancodecrew.sweg.dto.AccesoResponse;
 import com.cleancodecrew.sweg.dto.DashboardResponse;
 import com.cleancodecrew.sweg.model.EstadoReserva;
 import com.cleancodecrew.sweg.model.EstadoSala;
@@ -165,29 +164,6 @@ public class DashboardController {
                 reservasPorDia, reservasPorEstado, usoPorTipo, accesosPorDia,
                 topClientes, ocupacionPorHorario, actividad);
         return ResponseEntity.ok(resp);
-    }
-
-    /** CA-HU11-01: Historial de check-in / check-out consultable por el administrador. */
-    @GetMapping("/accesos")
-    public ResponseEntity<List<AccesoResponse>> accesos() {
-        List<AccesoResponse> eventos = new ArrayList<>();
-        for (Reserva r : reservaRepository.findConAccesos()) {
-            String sala = r.getSala().getNombre();
-            String cliente = r.getCliente() != null ? r.getCliente().getNombre() : null;
-            String correo = r.getCliente() != null ? r.getCliente().getCorreo() : null;
-            if (r.getFechaIngreso() != null) {
-                eventos.add(new AccesoResponse(r.getId(), "CHECK_IN", r.getFechaIngreso(), sala, cliente, correo,
-                        r.getIngresoPor() != null ? r.getIngresoPor().getNombre() : null,
-                        r.getHoraInicio(), r.getHoraFin(), r.getEstado().name()));
-            }
-            if (r.getFechaSalida() != null) {
-                eventos.add(new AccesoResponse(r.getId(), "CHECK_OUT", r.getFechaSalida(), sala, cliente, correo,
-                        r.getSalidaPor() != null ? r.getSalidaPor().getNombre() : null,
-                        r.getHoraInicio(), r.getHoraFin(), r.getEstado().name()));
-            }
-        }
-        eventos.sort(Comparator.comparing(AccesoResponse::fecha).reversed());
-        return ResponseEntity.ok(eventos);
     }
 
     // ── Helpers ──

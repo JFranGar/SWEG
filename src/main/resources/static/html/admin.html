@@ -82,7 +82,6 @@
         <a id="nav-salas" href="#">Gestión de Salas</a>
         <a id="nav-usuarios" href="#">Gestión de Usuarios</a>
         <a id="nav-invitaciones" href="#">Invitaciones</a>
-        <a id="nav-accesos" href="#">Historial de Accesos</a>
       </nav>
       <div class="sidebar-footer">
         <div id="user-rol" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
@@ -199,31 +198,6 @@
         </div>
       </div>
 
-      <!-- ══ SECCIÓN HISTORIAL DE ACCESOS ══ -->
-      <div id="section-accesos" style="display:none">
-        <div class="section-bar">
-          <h3>Historial de Check-in / Check-out</h3>
-          <div style="display:flex;gap:8px;align-items:center">
-            <div class="filter-chips" id="accesos-chips" style="display:flex;gap:6px">
-              <button class="chip active" data-filtro="TODOS">Todos</button>
-              <button class="chip" data-filtro="CHECK_IN">Check-in</button>
-              <button class="chip" data-filtro="CHECK_OUT">Check-out</button>
-            </div>
-            <button id="btn-refresh-accesos" class="btn btn-secondary btn-sm">↻ Actualizar</button>
-          </div>
-        </div>
-        <div class="card">
-          <table class="table">
-            <thead><tr><th>Tipo</th><th>Fecha y hora</th><th>Sala</th><th>Cliente</th><th>Horario</th><th>Registrado por</th></tr></thead>
-            <tbody id="tabla-accesos"></tbody>
-          </table>
-          <div class="pagination">
-            <button id="prev-accesos" class="btn btn-secondary btn-sm" disabled>‹ Anterior</button>
-            <span id="info-accesos" class="page-info"></span>
-            <button id="next-accesos" class="btn btn-secondary btn-sm" disabled>Siguiente ›</button>
-          </div>
-        </div>
-      </div>
     </main>
   </div>
 

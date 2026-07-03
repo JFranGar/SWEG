@@ -19,9 +19,14 @@
       </div>
       <form id="registro-form" novalidate>
         <div class="field">
-          <label for="nombre">Nombre completo</label>
-          <input id="nombre" class="input" type="text" autocomplete="name">
+          <label for="nombre">Nombres</label>
+          <input id="nombre" class="input" type="text" autocomplete="given-name">
           <div id="err-nombre" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="apellido">Apellidos</label>
+          <input id="apellido" class="input" type="text" autocomplete="family-name">
+          <div id="err-apellido" class="error-msg"></div>
         </div>
         <div class="field">
           <label for="correo">Correo</label>
@@ -31,6 +36,9 @@
         <div class="field">
           <label for="contrasena">Contraseña</label>
           <input id="contrasena" class="input" type="password" autocomplete="new-password">
+          <div class="input-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            Mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un número.
+          </div>
           <div id="err-contrasena" class="error-msg"></div>
         </div>
         <div class="field">

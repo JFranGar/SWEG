@@ -62,8 +62,10 @@ public class RegistroController {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiError.of(409, "Ya existe una cuenta con ese correo", http.getRequestURI()));
         }
+        // Nombre y apellido llegan separados y validados; se almacenan como nombre completo.
+        String nombreCompleto = (req.getNombre().trim() + " " + req.getApellido().trim()).trim();
         Usuario nuevo = Usuario.builder()
-                .nombre(req.getNombre().trim())
+                .nombre(nombreCompleto)
                 .correo(correo)
                 .contrasenaHash(passwordHasher.hash(req.getContrasena()))
                 .rol(Rol.CLIENTE)  // CA-HU12-03: rol forzado en backend, jamás desde el frontend
