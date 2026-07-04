@@ -1,5 +1,5 @@
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:8px;border-radius:var(--radius);padding:10px 14px;border:1px solid transparent;cursor:pointer;font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;text-align:center;gap:8px;border-radius:var(--radius);padding:10px 14px;border:1px solid transparent;cursor:pointer;font-weight:600}
 .btn:disabled{opacity:0.55;cursor:not-allowed}
 .btn-primary{background:var(--gold-gradient);color:#111;border:1px solid rgba(0,0,0,0.15);box-shadow:0 6px 14px rgba(192,160,0,0.08)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(255,215,0,0.12)}

@@ -62,6 +62,16 @@ public class Reserva {
     @Column(name = "fecha_salida")
     private LocalDateTime fechaSalida;
 
+    /** CA-HU11-01: recepcionista/admin que registro el check-in (trazabilidad). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ingreso_por_id")
+    private Usuario ingresoPor;
+
+    /** CA-HU11-01: recepcionista/admin que registro el check-out (trazabilidad). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "salida_por_id")
+    private Usuario salidaPor;
+
     @Column(name = "cantidad_personas")
     private Integer cantidadPersonas;
 
@@ -145,15 +155,23 @@ public class Reserva {
     }
 
     /**
-     * CA-HU08-01,03,04: Registra la salida del cliente.
+     * CA-HU08-01,03,04 / CA-HU11-02: Registra la salida (check-out) del cliente.
      * Cambia la reserva a FINALIZADA y la sala a DISPONIBLE o EN_LIMPIEZA.
+     * Reglas: exige check-in previo (estado EN_USO) e impide el doble check-out.
      */
-    public void registrarSalida(boolean requiereLimpieza, LocalDateTime ahora) {
+    public void registrarSalida(boolean requiereLimpieza, LocalDateTime ahora, Usuario operador) {
+        if (this.estado == EstadoReserva.FINALIZADA) {
+            throw new IllegalStateException("La reserva ya finalizó: el check-out ya fue registrado");
+        }
+        if (this.estado == EstadoReserva.CONFIRMADA || this.estado == EstadoReserva.PENDIENTE) {
+            throw new IllegalStateException("No se puede registrar la salida: la reserva no tiene check-in previo");
+        }
         if (this.estado != EstadoReserva.EN_USO) {
-            throw new IllegalStateException("Solo reservas en uso pueden registrar salida");
+            throw new IllegalStateException("Solo una reserva en uso puede registrar la salida");
         }
         this.estado = EstadoReserva.FINALIZADA;
         this.fechaSalida = ahora;
+        this.salidaPor = operador;
         if (requiereLimpieza) {
             this.sala.marcarEnLimpieza();
         } else {
@@ -161,14 +179,28 @@ public class Reserva {
         }
     }
 
-    /** CA-HU07-02: Marca la reserva como EN_USO y actualiza la sala. */
-    public void registrarIngreso(LocalDateTime ahora) {
+    /**
+     * CA-HU07-02 / CA-HU11-02: Marca la reserva como EN_USO (check-in) y actualiza la sala.
+     * Reglas: solo reservas activas (CONFIRMADA/PENDIENTE), no canceladas ni finalizadas,
+     * dentro de la ventana horaria, e impide el doble check-in.
+     */
+    public void registrarIngreso(LocalDateTime ahora, Usuario operador) {
+        if (this.estado == EstadoReserva.EN_USO) {
+            throw new IllegalStateException("La reserva ya tiene un check-in registrado");
+        }
+        if (this.estado == EstadoReserva.CANCELADA) {
+            throw new IllegalStateException("No se puede registrar ingreso: la reserva está cancelada");
+        }
+        if (this.estado == EstadoReserva.FINALIZADA) {
+            throw new IllegalStateException("No se puede registrar ingreso: la reserva ya finalizó");
+        }
         if (this.estado != EstadoReserva.CONFIRMADA && this.estado != EstadoReserva.PENDIENTE) {
             throw new IllegalStateException("Solo reservas activas pueden registrar ingreso");
         }
         validarVentanaDeIngreso(ahora);
         this.estado = EstadoReserva.EN_USO;
         this.fechaIngreso = ahora;
+        this.ingresoPor = operador;
         this.sala.marcarEnUso();
     }
 

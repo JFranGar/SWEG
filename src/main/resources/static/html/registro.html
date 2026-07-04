@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Crear cuenta - SWGEC</title>
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/login.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>body{background:var(--bg-base)}</style>
+</head>
+<body>
+  <main class="login-shell">
+    <section class="login-card">
+      <div class="login-brand">
+        <h1>SWGEC</h1>
+        <p>Crear cuenta de cliente</p>
+      </div>
+      <form id="registro-form" novalidate>
+        <div class="field">
+          <label for="nombre">Nombres</label>
+          <input id="nombre" class="input" type="text" autocomplete="given-name">
+          <div id="err-nombre" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="apellido">Apellidos</label>
+          <input id="apellido" class="input" type="text" autocomplete="family-name">
+          <div id="err-apellido" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="correo">Correo</label>
+          <input id="correo" class="input" type="email" autocomplete="email">
+          <div id="err-correo" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" class="input" type="password" autocomplete="new-password">
+          <div class="input-hint" style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            Mínimo 8 caracteres, con al menos una mayúscula, una minúscula y un número.
+          </div>
+          <div id="err-contrasena" class="error-msg"></div>
+        </div>
+        <div class="field">
+          <label for="contrasena2">Confirmar contraseña</label>
+          <input id="contrasena2" class="input" type="password" autocomplete="new-password">
+          <div id="err-contrasena2" class="error-msg"></div>
+        </div>
+        <button id="btn-registro" type="submit" class="btn btn-primary full">Crear cuenta</button>
+      </form>
+      <div class="login-footer" style="text-align:center;margin-top:14px">
+        ¿Ya tienes cuenta? <a href="/html/login.html">Inicia sesión</a>
+      </div>
+    </section>
+  </main>
+  <div id="toast-container"></div>
+  <script src="/js/api.js"></script>
+  <script src="/js/registro.js"></script>
+</body>
+</html>

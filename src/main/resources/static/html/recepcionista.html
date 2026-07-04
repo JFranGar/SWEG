@@ -142,6 +142,7 @@
       <nav class="nav">
         <a id="nav-dia" class="active" href="#">Vista del Día</a>
         <a id="nav-correo" href="#">Buscar por Correo</a>
+        <a id="nav-accesos" href="#">Check-in / Check-out</a>
       </nav>
       <div class="sidebar-footer">
         <div id="user-correo" class="user-chip" style="margin-bottom:8px;font-size:11px;word-break:break-all"></div>
@@ -224,6 +225,50 @@
         </div>
       </div>
 
+      <!-- ══ SECCIÓN CHECK-IN / CHECK-OUT ══ -->
+      <div id="section-accesos" style="display:none;flex:1;padding:24px;overflow-y:auto">
+        <div style="max-width:980px;margin:0 auto">
+
+          <!-- Indicadores de accesos de hoy -->
+          <div id="accesos-cards" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:16px">
+            <div class="stat-card" style="--accent:#00C851;flex:1;min-width:180px">
+              <div class="stat-label">Check-ins hoy</div>
+              <div class="stat-value" id="stat-checkins-hoy">0</div>
+            </div>
+            <div class="stat-card" style="--accent:#FFA500;flex:1;min-width:180px">
+              <div class="stat-label">Check-outs hoy</div>
+              <div class="stat-value" id="stat-checkouts-hoy">0</div>
+            </div>
+          </div>
+
+          <!-- Gráfica de accesos (últimos 7 días) -->
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:12px">Check-in / Check-out (últimos 7 días)</div>
+            <div id="accesos-chart" style="display:flex;align-items:stretch;gap:10px;height:150px"></div>
+            <div style="display:flex;gap:18px;margin-top:12px;font-size:12px;color:var(--text-muted)">
+              <span><span style="display:inline-block;width:10px;height:10px;background:#00C851;border-radius:2px;margin-right:5px"></span>Check-in</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#FFA500;border-radius:2px;margin-right:5px"></span>Check-out</span>
+            </div>
+          </div>
+
+          <!-- Historial detallado -->
+          <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap">
+            <div id="accesos-chips" style="display:flex;gap:6px">
+              <button class="chip active" data-filtro="TODOS">Todos</button>
+              <button class="chip" data-filtro="CHECK_IN">Check-in</button>
+              <button class="chip" data-filtro="CHECK_OUT">Check-out</button>
+            </div>
+            <button id="btn-refresh-accesos" class="btn btn-secondary btn-sm">↻ Actualizar</button>
+          </div>
+          <div class="card">
+            <table class="table">
+              <thead><tr><th>Tipo</th><th>Fecha y hora</th><th>Sala</th><th>Cliente</th><th>Horario</th><th>Registrado por</th></tr></thead>
+              <tbody id="tabla-accesos"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -258,8 +303,8 @@
   </dialog>
 
   <div id="toast-container"></div>
-  <script src="/js/api.js"></script>
-  <script src="/js/guards.js"></script>
-  <script src="/js/recepcion.js"></script>
+  <script src="/js/api.js?v=2"></script>
+  <script src="/js/guards.js?v=2"></script>
+  <script src="/js/recepcion.js?v=2"></script>
 </body>
 </html>

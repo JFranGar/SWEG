@@ -30,7 +30,7 @@
       const body={correo:correo.value.toLowerCase().trim(),contrasena:contrasena.value, rolSeleccionado: rolHidden.value};
       const res=await api.post('/api/auth/login',body);
       toast.success('Bienvenido');
-      if(res.rol==='ADMIN') location.href='/html/admin.html'; else if(res.rol==='CLIENTE') location.href='/html/cliente.html'; else if(res.rol==='RECEPCIONISTA') location.href='/html/recepcionista.html'; else location.href='/html/login.html';
+      if(res.rol==='ADMIN') location.href='/html/admin.html?v=2'; else if(res.rol==='CLIENTE') location.href='/html/cliente.html?v=2'; else if(res.rol==='RECEPCIONISTA') location.href='/html/recepcionista.html?v=2'; else location.href='/html/login.html';
     }catch(err){
       if(err.status===400){
         try{pintarErroresCampo(err);}catch(e){}
