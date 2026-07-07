@@ -76,7 +76,15 @@ Dado que una reserva se encuentra En uso tras un check-in previo
 
 Cuando registro el check-out de esa reserva
 
-Entonces la reserva pasa al estado Finalizada, la sala se libera, el evento queda disponible en el historial de accesos para el administrador, y el sistema impide el check-out sin check-in previo o un doble check-out.
+Entonces la reserva pasa al estado Finalizada, la sala se libera, el evento queda disponible en el historial de accesos del módulo de Recepción (sección Check-in / Check-out), y el sistema impide el check-out sin check-in previo o un doble check-out.
+
+### Criterio de aceptación 4
+
+Dado que inicio sesión como recepcionista y abro la sección Check-in / Check-out
+
+Cuando el sistema carga la información de accesos
+
+Entonces veo los indicadores de check-ins y check-outs de hoy, una gráfica de los últimos siete días y un historial filtrable por tipo (todos, check-in, check-out) con la fecha y la hora, la sala, el cliente, el horario y el recepcionista que registró cada acceso.
 
 # Registro de cuentas con modelo híbrido RBAC
 
@@ -117,3 +125,11 @@ Dado que recibo un enlace de invitación válido y vigente
 Cuando completo mi registro a través de ese enlace
 
 Entonces el sistema crea mi cuenta con el rol definido en la invitación y la marca como utilizada, impidiendo que se reutilice o que se use después de haber expirado.
+
+### Criterio de aceptación 4
+
+Dado que completo el formulario público de registro con mis nombres, apellidos, correo y contraseña
+
+Cuando ingreso nombres o apellidos con números o caracteres especiales, o una contraseña que no cumple los requisitos de seguridad (mínimo 8 caracteres, con mayúscula, minúscula y número)
+
+Entonces el sistema rechaza el registro y solicita corregir los datos, sin crear la cuenta.
