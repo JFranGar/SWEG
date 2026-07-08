@@ -46,6 +46,11 @@ public class ReservaScheduler {
         log.info("Scheduler: finalizando {} reservas vencidas", vencidas.size());
 
         for (Reserva r : vencidas) {
+            // Red de seguridad: una reserva EN_USO rezagada se cierra registrando como
+            // hora de salida el fin de su rango horario (check-out automático del sistema).
+            if (r.getEstado() == EstadoReserva.EN_USO && r.getFechaSalida() == null) {
+                r.setFechaSalida(LocalDateTime.of(r.getFecha(), r.getHoraFin()));
+            }
             r.setEstado(EstadoReserva.FINALIZADA);
             reservaRepository.save(r);
 

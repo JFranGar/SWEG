@@ -60,14 +60,26 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 			@org.springframework.data.repository.query.Param("salaId") Long salaId,
 			@org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
 
+	/**
+	 * Reservas que el scheduler debe finalizar automáticamente:
+	 *  - "No-show": CONFIRMADA/PENDIENTE cuyo horario ya venció (nunca hubo check-in).
+	 *  - EN_USO rezagadas de días anteriores (red de seguridad si faltó el check-out manual).
+	 * Las reservas EN_USO del mismo día NO se incluyen: quedan disponibles para que el
+	 * recepcionista registre la salida (check-out) manualmente a partir de horaFin.
+	 */
 	@org.springframework.data.jpa.repository.Query("""
 		SELECT r FROM Reserva r
-		WHERE r.estado IN (
-			com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
-			com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE,
-			com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+		WHERE (
+			r.estado IN (
+				com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+				com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
+			)
+			AND (r.fecha < :hoy OR (r.fecha = :hoy AND r.horaFin <= :horaActual))
 		)
-		AND (r.fecha < :hoy OR (r.fecha = :hoy AND r.horaFin <= :horaActual))
+		OR (
+			r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+			AND r.fecha < :hoy
+		)
 	""")
 	List<Reserva> findReservasVencidas(
 			@org.springframework.data.repository.query.Param("hoy") LocalDate hoy,

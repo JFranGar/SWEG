@@ -137,37 +137,52 @@ public class Reserva {
         this.fechaCancelacion = LocalDateTime.now();
     }
 
-    public static final int MINUTOS_TOLERANCIA_ENTRADA = 15;
+    private static final java.time.format.DateTimeFormatter HHMM =
+            java.time.format.DateTimeFormatter.ofPattern("HH:mm");
 
-    /** CA-HU07-03: Valida si la reserva esta dentro del rango para hacer check-in. */
+    /**
+     * CA-HU07-03 / CA-HU11-CA05: Valida que el check-in ocurra dentro del rango horario elegido.
+     * El ingreso solo se permite desde {@code horaInicio} y hasta {@code horaFin} (inclusive);
+     * no existe tolerancia previa: antes de la hora de inicio el ingreso queda bloqueado.
+     */
     public void validarVentanaDeIngreso(LocalDateTime ahora) {
         LocalDateTime inicio = LocalDateTime.of(this.fecha, this.horaInicio);
         LocalDateTime fin    = LocalDateTime.of(this.fecha, this.horaFin);
-        LocalDateTime ventanaInicio = inicio.minusMinutes(MINUTOS_TOLERANCIA_ENTRADA);
 
-        if (ahora.isBefore(ventanaInicio)) {
+        if (ahora.isBefore(inicio)) {
             throw new IllegalStateException(
-                "La sala aun no esta disponible para ocupacion. Reserva inicia a las " + this.horaInicio);
+                "Aún no puede registrar ingreso. La reunión inicia a las " + this.horaInicio.format(HHMM) + ".");
         }
         if (ahora.isAfter(fin)) {
-            throw new IllegalStateException("La reserva ya finalizo");
+            throw new IllegalStateException(
+                "El horario de la reserva ya terminó; no es posible registrar el ingreso.");
         }
     }
 
     /**
      * CA-HU08-01,03,04 / CA-HU11-02: Registra la salida (check-out) del cliente.
      * Cambia la reserva a FINALIZADA y la sala a DISPONIBLE o EN_LIMPIEZA.
-     * Reglas: exige check-in previo (estado EN_USO) e impide el doble check-out.
+     * Reglas: exige check-in previo (estado EN_USO), impide el doble check-out y solo
+     * permite la salida cuando el rango horario elegido ya terminó ({@code ahora >= horaFin}).
      */
     public void registrarSalida(boolean requiereLimpieza, LocalDateTime ahora, Usuario operador) {
         if (this.estado == EstadoReserva.FINALIZADA) {
             throw new IllegalStateException("La reserva ya finalizó: el check-out ya fue registrado");
+        }
+        if (this.estado == EstadoReserva.CANCELADA) {
+            throw new IllegalStateException("No se puede registrar la salida: la reserva está cancelada");
         }
         if (this.estado == EstadoReserva.CONFIRMADA || this.estado == EstadoReserva.PENDIENTE) {
             throw new IllegalStateException("No se puede registrar la salida: la reserva no tiene check-in previo");
         }
         if (this.estado != EstadoReserva.EN_USO) {
             throw new IllegalStateException("Solo una reserva en uso puede registrar la salida");
+        }
+        // El check-out solo finaliza la reunión cuando termina el rango horario elegido.
+        LocalDateTime fin = LocalDateTime.of(this.fecha, this.horaFin);
+        if (ahora.isBefore(fin)) {
+            throw new IllegalStateException(
+                "Aún no puede registrar salida. La reunión termina a las " + this.horaFin.format(HHMM) + ".");
         }
         this.estado = EstadoReserva.FINALIZADA;
         this.fechaSalida = ahora;

@@ -165,24 +165,72 @@
     return card;
   }
 
+  /* Construye un Date a partir de la fecha + hora (HH:mm:ss) de la reserva. */
+  function fechaHoraReserva(fecha, hora) {
+    if (!fecha || !hora) return null;
+    const d = new Date(`${fecha}T${String(hora).substring(0, 8)}`);
+    return isNaN(d) ? null : d;
+  }
+
+  /* Botón deshabilitado por horario: no ejecuta la acción y explica cuándo se habilita. */
+  function botonBloqueado(label, mensaje) {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-sm';
+    btn.textContent = label;
+    btn.title = mensaje;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+    btn.style.borderColor = 'var(--border-soft)';
+    btn.addEventListener('click', () => toast.info(mensaje));
+    return btn;
+  }
+
+  function hint(texto) {
+    return `<span style="font-size:11px;color:var(--text-muted)">${texto}</span>`;
+  }
+
   function renderBotonesReserva(container, res) {
     container.innerHTML = '';
+    const ahora  = new Date();
+    const inicio = fechaHoraReserva(res.fecha, res.horaInicio);
+    const fin    = fechaHoraReserva(res.fecha, res.horaFin);
+    const hhI = String(res.horaInicio).substring(0, 5);
+    const hhF = String(res.horaFin).substring(0, 5);
+
     if (res.estado === 'CONFIRMADA' || res.estado === 'PENDIENTE') {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-primary btn-sm';
-      btn.textContent = 'Registrar Ingreso';
-      btn.addEventListener('click', () => accionIngreso(res.id, btn));
-      container.appendChild(btn);
+      // Check-in solo dentro del rango [horaInicio, horaFin].
+      if (inicio && ahora < inicio) {
+        container.appendChild(botonBloqueado(
+          'Registrar Ingreso',
+          `Aún no puede registrar ingreso. La reunión inicia a las ${hhI}.`));
+      } else if (fin && ahora > fin) {
+        container.innerHTML = hint('Fuera de horario de ingreso');
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-sm';
+        btn.textContent = 'Registrar Ingreso';
+        btn.addEventListener('click', () => accionIngreso(res.id, btn));
+        container.appendChild(btn);
+      }
     } else if (res.estado === 'EN_USO') {
-      const btn = document.createElement('button');
-      btn.className = 'btn btn-secondary btn-sm';
-      btn.textContent = 'Registrar Salida';
-      btn.style.borderColor = 'rgba(255,165,0,0.4)';
-      btn.style.color = '#FFA500';
-      btn.addEventListener('click', () => abrirModalSalida(res));
-      container.appendChild(btn);
+      // Check-out solo cuando terminó el rango horario elegido (ahora >= horaFin).
+      if (fin && ahora < fin) {
+        container.appendChild(botonBloqueado(
+          'Registrar Salida',
+          `Aún no puede registrar salida. La reunión termina a las ${hhF}.`));
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-secondary btn-sm';
+        btn.textContent = 'Registrar Salida';
+        btn.style.borderColor = 'rgba(255,165,0,0.4)';
+        btn.style.color = '#FFA500';
+        btn.addEventListener('click', () => abrirModalSalida(res));
+        container.appendChild(btn);
+      }
     } else if (res.estado === 'FINALIZADA') {
-      container.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">✓ Finalizada</span>';
+      container.innerHTML = hint('✓ Finalizada');
+    } else if (res.estado === 'CANCELADA') {
+      container.innerHTML = hint('Cancelada');
     }
   }
 
