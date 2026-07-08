@@ -56,11 +56,11 @@ Asegurar que solo se ocupen salas con reservas válidas y contar con un historia
 
 ### Criterio de aceptación 1
 
-Dado que un cliente tiene una reserva confirmada dentro de su horario válido
+Dado que un cliente tiene una reserva confirmada y la hora actual está dentro de su rango horario (entre la hora de inicio y la hora de fin)
 
 Cuando registro el check-in de esa reserva
 
-Entonces la reserva pasa al estado En uso y se guardan la fecha, la hora y el usuario responsable que realizó el registro.
+Entonces la reserva pasa al estado En uso, sin finalizarse, y se guardan la fecha, la hora real de ingreso y el usuario responsable que realizó el registro.
 
 ### Criterio de aceptación 2
 
@@ -72,11 +72,11 @@ Entonces el sistema rechaza la acción con un mensaje claro y no permite realiza
 
 ### Criterio de aceptación 3
 
-Dado que una reserva se encuentra En uso tras un check-in previo
+Dado que una reserva se encuentra En uso tras un check-in previo y la hora actual es igual o posterior a la hora de fin
 
 Cuando registro el check-out de esa reserva
 
-Entonces la reserva pasa al estado Finalizada, la sala se libera, el evento queda disponible en el historial de accesos del módulo de Recepción (sección Check-in / Check-out), y el sistema impide el check-out sin check-in previo o un doble check-out.
+Entonces la reserva pasa al estado Finalizada, se guarda la hora real de salida, la sala se libera, el evento queda disponible en el historial de accesos del módulo de Recepción (sección Check-in / Check-out), y el sistema impide el check-out sin check-in previo o un doble check-out.
 
 ### Criterio de aceptación 4
 
@@ -85,6 +85,22 @@ Dado que inicio sesión como recepcionista y abro la sección Check-in / Check-o
 Cuando el sistema carga la información de accesos
 
 Entonces veo los indicadores de check-ins y check-outs de hoy, una gráfica de los últimos siete días y un historial filtrable por tipo (todos, check-in, check-out) con la fecha y la hora, la sala, el cliente, el horario y el recepcionista que registró cada acceso.
+
+### Criterio de aceptación 5
+
+Dado que la hora actual es anterior a la hora de inicio de una reserva
+
+Cuando intento registrar el check-in
+
+Entonces el sistema bloquea la acción con el mensaje «Aún no puede registrar ingreso. La reunión inicia a las HH:mm.», la reserva permanece sin cambios y tampoco permite registrar la salida mientras no exista un check-in.
+
+### Criterio de aceptación 6
+
+Dado que una reserva se encuentra En uso y la hora actual es anterior a la hora de fin
+
+Cuando intento registrar el check-out
+
+Entonces el sistema bloquea la acción con el mensaje «Aún no puede registrar salida. La reunión termina a las HH:mm.» y la reserva se mantiene En uso, de modo que el check-in y el check-out nunca comparten la misma lógica.
 
 # Registro de cuentas con modelo híbrido RBAC
 

@@ -105,7 +105,12 @@ public class RecepcionController {
                     .body(ApiError.of(404, "Reserva no encontrada", req.getRequestURI()));
         }
         Usuario operador = operadorActual(req);
-        r.registrarIngreso(LocalDateTime.now(), operador);
+        try {
+            r.registrarIngreso(LocalDateTime.now(), operador);
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiError.of(409, ex.getMessage(), req.getRequestURI()));
+        }
         reservaRepo.save(r);
         salaRepository.save(r.getSala());
         log.info("Recepcion: check-in reserva={} operador='{}'",
