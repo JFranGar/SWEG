@@ -82,7 +82,7 @@
       item.innerHTML = `
         <div class="sala-item-header">
           <span class="sala-item-nombre">${esc(sala.nombre)}</span>
-          <span class="badge badge-${sala.estadoPanel.toLowerCase()}" style="font-size:10px;white-space:nowrap">
+          <span class="badge badge-${sala.estadoPanel.toLowerCase()}" style="font-size:0.75rem;white-space:nowrap">
             ${ESTADO_LABEL[sala.estadoPanel] || sala.estadoPanel}
           </span>
         </div>
@@ -427,7 +427,7 @@
           <div title="Check-in: ${d.cin}" style="width:14px;background:#00C851;border-radius:3px 3px 0 0;height:${d.cin / max * 100}%;min-height:${d.cin > 0 ? 4 : 0}px"></div>
           <div title="Check-out: ${d.cout}" style="width:14px;background:#FFA500;border-radius:3px 3px 0 0;height:${d.cout / max * 100}%;min-height:${d.cout > 0 ? 4 : 0}px"></div>
         </div>
-        <div style="font-size:10px;color:var(--text-muted);white-space:nowrap">${d.label}</div>`;
+        <div style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap">${d.label}</div>`;
       cont.appendChild(col);
     });
   }

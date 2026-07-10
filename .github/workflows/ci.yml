@@ -1,0 +1,65 @@
+name: CI
+
+# Pipeline de Integración Continua para SWGEC.
+# Compila, ejecuta las pruebas (con PostgreSQL) y, si hay credenciales, corre
+# el análisis de SonarQube ("Clean as You Code": los PR no deben introducir issues nuevos).
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    # Credenciales de SonarQube (opcionales). Definidas a nivel de job para que
+    # el paso condicional pueda comprobar su presencia.
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+    # Base de datos requerida por las pruebas de integración (@SpringBootTest).
+    # Coincide con la configuración de application.properties (swgec_db, postgres/postgres).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: swgec_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # requerido por SonarQube para el blame/análisis
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Build & test
+        run: ./mvnw -B clean verify
+
+      # Análisis SonarQube — solo se ejecuta si están configurados los secrets
+      # SONAR_TOKEN y SONAR_HOST_URL en el repositorio.
+      - name: SonarQube analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: >-
+          ./mvnw -B sonar:sonar
+          -Dsonar.projectKey=swgec
+          -Dsonar.host.url=$SONAR_HOST_URL
+          -Dsonar.token=$SONAR_TOKEN

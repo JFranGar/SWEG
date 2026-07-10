@@ -19,6 +19,8 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
+	private static final String ERROR = "error";
+
 	private final UsuarioRepository usuarioRepository;
 	private final PasswordHasher passwordHasher;
 
@@ -29,28 +31,28 @@ public class AuthController {
 
 	// CA-HU01-01, CA-HU01-02, CA-HU01-03
 	@PostMapping("/login")
-	public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+	public ResponseEntity<Object> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
 		var maybe = usuarioRepository.findByCorreoIgnoreCase(req.getCorreo());
 		if (maybe.isEmpty()) {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Credenciales no validas"));
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(ERROR, "Credenciales no validas"));
 		}
 		Usuario u = maybe.get();
 
 		if (u.estaBloqueado()) {
 			long minutos = u.minutosRestantesDeBloqueo();
 			String msg = "Cuenta bloqueada. Intentelo en " + minutos + " minutos.";
-			return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of("error", msg));
+			return ResponseEntity.status(HttpStatus.LOCKED).body(Map.of(ERROR, msg));
 		}
 
 		if (!passwordHasher.matches(req.getContrasena(), u.getContrasenaHash())) {
 			u.registrarIntentoFallido();
 			usuarioRepository.save(u);
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Credenciales no validas"));
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(ERROR, "Credenciales no validas"));
 		}
 
 		// CA-HU01-01: el rol seleccionado debe coincidir con el rol real.
 		if (!u.getRol().name().equals(req.getRolSeleccionado().name())) {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "El rol seleccionado no coincide con su cuenta."));
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(ERROR, "El rol seleccionado no coincide con su cuenta."));
 		}
 
 		u.registrarLoginExitoso();
@@ -74,7 +76,7 @@ public class AuthController {
 	}
 
 	@GetMapping("/me")
-	public ResponseEntity<?> me(HttpServletRequest request) {
+	public ResponseEntity<Object> me(HttpServletRequest request) {
 		HttpSession session = request.getSession(false);
 		if (session == null || session.getAttribute(AuthInterceptor.SESSION_USER_ID) == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

@@ -13,154 +13,154 @@ import java.util.List;
 
 @Repository
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
-	List<Reserva> findBySala_IdAndFechaAndEstadoNot(Long salaId, LocalDate fecha, EstadoReserva estado);
-	List<Reserva> findByCliente_IdOrderByFechaDescHoraInicioDesc(Long clienteId);
-	Page<Reserva> findByCliente_IdOrderByFechaDescHoraInicioDesc(Long clienteId, Pageable pageable);
+    List<Reserva> findBySalaIdAndFechaAndEstadoNot(Long salaId, LocalDate fecha, EstadoReserva estado);
+    List<Reserva> findByClienteIdOrderByFechaDescHoraInicioDesc(Long clienteId);
+    Page<Reserva> findByClienteIdOrderByFechaDescHoraInicioDesc(Long clienteId, Pageable pageable);
 
-	boolean existsByCliente_Id(Long clienteId);
+    boolean existsByClienteId(Long clienteId);
 
-	boolean existsBySala_Id(Long salaId);
+    boolean existsBySalaId(Long salaId);
 
-	boolean existsBySala_IdAndEstadoNot(Long salaId, EstadoReserva estado);
+    boolean existsBySalaIdAndEstadoNot(Long salaId, EstadoReserva estado);
 
-	 @org.springframework.data.jpa.repository.Query("""
-		 SELECT r FROM Reserva r
-		 WHERE r.sala.id = :salaId
-			AND r.fecha = :fecha
-			AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
-	 """)
-	 List<Reserva> findActivasPorSalaYFecha(@org.springframework.data.repository.query.Param("salaId") Long salaId,
-														 @org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
+     @org.springframework.data.jpa.repository.Query("""
+         SELECT r FROM Reserva r
+         WHERE r.sala.id = :salaId
+            AND r.fecha = :fecha
+            AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
+     """)
+     List<Reserva> findActivasPorSalaYFecha(@org.springframework.data.repository.query.Param("salaId") Long salaId,
+                                                         @org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
 
-	 @org.springframework.data.jpa.repository.Query("""
-		 SELECT r FROM Reserva r
-		 WHERE LOWER(r.cliente.correo) = :correo
-			AND r.fecha = :fecha
-			AND r.estado IN (
-				com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE,
-				com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
-				com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
-			)
-		 ORDER BY r.horaInicio ASC
-	 """)
-	 List<Reserva> findReservasDelDiaPorCorreoCliente(@org.springframework.data.repository.query.Param("correo") String correo,
-																	  @org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
+     @org.springframework.data.jpa.repository.Query("""
+         SELECT r FROM Reserva r
+         WHERE LOWER(r.cliente.correo) = :correo
+            AND r.fecha = :fecha
+            AND r.estado IN (
+                com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE,
+                com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+                com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+            )
+         ORDER BY r.horaInicio ASC
+     """)
+     List<Reserva> findReservasDelDiaPorCorreoCliente(@org.springframework.data.repository.query.Param("correo") String correo,
+                                                                      @org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
 
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r
-		WHERE r.sala.id = :salaId
-		  AND r.fecha = :fecha
-		  AND r.estado NOT IN (
-			  com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA,
-			  com.cleancodecrew.sweg.model.EstadoReserva.FINALIZADA
-		  )
-		ORDER BY r.horaInicio ASC
-	""")
-	List<Reserva> findOcupadasPorSalaYFecha(
-			@org.springframework.data.repository.query.Param("salaId") Long salaId,
-			@org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r
+        WHERE r.sala.id = :salaId
+          AND r.fecha = :fecha
+          AND r.estado NOT IN (
+              com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA,
+              com.cleancodecrew.sweg.model.EstadoReserva.FINALIZADA
+          )
+        ORDER BY r.horaInicio ASC
+    """)
+    List<Reserva> findOcupadasPorSalaYFecha(
+            @org.springframework.data.repository.query.Param("salaId") Long salaId,
+            @org.springframework.data.repository.query.Param("fecha") LocalDate fecha);
 
-	/**
-	 * Reservas que el scheduler debe finalizar automáticamente:
-	 *  - "No-show": CONFIRMADA/PENDIENTE cuyo horario ya venció (nunca hubo check-in).
-	 *  - EN_USO rezagadas de días anteriores (red de seguridad si faltó el check-out manual).
-	 * Las reservas EN_USO del mismo día NO se incluyen: quedan disponibles para que el
-	 * recepcionista registre la salida (check-out) manualmente a partir de horaFin.
-	 */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r
-		WHERE (
-			r.estado IN (
-				com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
-				com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
-			)
-			AND (r.fecha < :hoy OR (r.fecha = :hoy AND r.horaFin <= :horaActual))
-		)
-		OR (
-			r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
-			AND r.fecha < :hoy
-		)
-	""")
-	List<Reserva> findReservasVencidas(
-			@org.springframework.data.repository.query.Param("hoy") LocalDate hoy,
-			@org.springframework.data.repository.query.Param("horaActual") LocalTime horaActual);
+    /**
+     * Reservas que el scheduler debe finalizar automáticamente:
+     *  - "No-show": CONFIRMADA/PENDIENTE cuyo horario ya venció (nunca hubo check-in).
+     *  - EN_USO rezagadas de días anteriores (red de seguridad si faltó el check-out manual).
+     * Las reservas EN_USO del mismo día NO se incluyen: quedan disponibles para que el
+     * recepcionista registre la salida (check-out) manualmente a partir de horaFin.
+     */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r
+        WHERE (
+            r.estado IN (
+                com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+                com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
+            )
+            AND (r.fecha < :hoy OR (r.fecha = :hoy AND r.horaFin <= :horaActual))
+        )
+        OR (
+            r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+            AND r.fecha < :hoy
+        )
+    """)
+    List<Reserva> findReservasVencidas(
+            @org.springframework.data.repository.query.Param("hoy") LocalDate hoy,
+            @org.springframework.data.repository.query.Param("horaActual") LocalTime horaActual);
 
-	boolean existsBySala_IdAndEstado(Long salaId, EstadoReserva estado);
+    boolean existsBySalaIdAndEstado(Long salaId, EstadoReserva estado);
 
-	/** Devuelve reservas activas de una sala/fecha excluyendo explícitamente un ID dado (uso en editar). */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r
-		WHERE r.sala.id = :salaId
-		  AND r.fecha   = :fecha
-		  AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
-		  AND r.id     <> :excludeId
-	""")
-	List<Reserva> findOtrasActivasPorSalaYFecha(
-		@org.springframework.data.repository.query.Param("salaId")    Long salaId,
-		@org.springframework.data.repository.query.Param("fecha")     LocalDate fecha,
-		@org.springframework.data.repository.query.Param("excludeId") Long excludeId
-	);
+    /** Devuelve reservas activas de una sala/fecha excluyendo explícitamente un ID dado (uso en editar). */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r
+        WHERE r.sala.id = :salaId
+          AND r.fecha   = :fecha
+          AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
+          AND r.id     <> :excludeId
+    """)
+    List<Reserva> findOtrasActivasPorSalaYFecha(
+        @org.springframework.data.repository.query.Param("salaId")    Long salaId,
+        @org.springframework.data.repository.query.Param("fecha")     LocalDate fecha,
+        @org.springframework.data.repository.query.Param("excludeId") Long excludeId
+    );
 
-	/** CA-HU03-01: IDs de salas con reservas que se solapan con el horario solicitado. */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT DISTINCT r.sala.id FROM Reserva r
-		WHERE r.fecha = :fecha
-		  AND r.estado NOT IN (
-		      com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA,
-		      com.cleancodecrew.sweg.model.EstadoReserva.FINALIZADA
-		  )
-		  AND r.horaInicio < :horaFin
-		  AND r.horaFin > :horaInicio
-	""")
-	List<Long> findSalaIdsConReservaEnHorario(
-		@org.springframework.data.repository.query.Param("fecha")      LocalDate fecha,
-		@org.springframework.data.repository.query.Param("horaInicio") LocalTime horaInicio,
-		@org.springframework.data.repository.query.Param("horaFin")    LocalTime horaFin
-	);
+    /** CA-HU03-01: IDs de salas con reservas que se solapan con el horario solicitado. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT DISTINCT r.sala.id FROM Reserva r
+        WHERE r.fecha = :fecha
+          AND r.estado NOT IN (
+              com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA,
+              com.cleancodecrew.sweg.model.EstadoReserva.FINALIZADA
+          )
+          AND r.horaInicio < :horaFin
+          AND r.horaFin > :horaInicio
+    """)
+    List<Long> findSalaIdsConReservaEnHorario(
+        @org.springframework.data.repository.query.Param("fecha")      LocalDate fecha,
+        @org.springframework.data.repository.query.Param("horaInicio") LocalTime horaInicio,
+        @org.springframework.data.repository.query.Param("horaFin")    LocalTime horaFin
+    );
 
-	/** CA-HU09-02: Reservas CONFIRMADA/PENDIENTE hoy (salas "Reservadas" en el panel). */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r JOIN FETCH r.sala
-		WHERE r.estado IN (
-		    com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
-		    com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
-		)
-		AND r.fecha = :hoy
-	""")
-	List<Reserva> findActivasHoy(@org.springframework.data.repository.query.Param("hoy") LocalDate hoy);
+    /** CA-HU09-02: Reservas CONFIRMADA/PENDIENTE hoy (salas "Reservadas" en el panel). */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r JOIN FETCH r.sala
+        WHERE r.estado IN (
+            com.cleancodecrew.sweg.model.EstadoReserva.CONFIRMADA,
+            com.cleancodecrew.sweg.model.EstadoReserva.PENDIENTE
+        )
+        AND r.fecha = :hoy
+    """)
+    List<Reserva> findActivasHoy(@org.springframework.data.repository.query.Param("hoy") LocalDate hoy);
 
-	/** CA-HU08-01: Todas las reservas actualmente EN_USO (para vista rápida del recepcionista). */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
-		WHERE r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
-		ORDER BY r.sala.nombre ASC
-	""")
-	List<Reserva> findTodasEnUso();
+    /** CA-HU08-01: Todas las reservas actualmente EN_USO (para vista rápida del recepcionista). */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+        WHERE r.estado = com.cleancodecrew.sweg.model.EstadoReserva.EN_USO
+        ORDER BY r.sala.nombre ASC
+    """)
+    List<Reserva> findTodasEnUso();
 
-	/** CA-HU08-02: Reservas del día para una sala con datos de cliente precargados. */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
-		WHERE r.sala.id = :salaId
-		  AND r.fecha = :fecha
-		  AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
-		ORDER BY r.horaInicio ASC
-	""")
-	List<Reserva> findReservasDetalladasPorSalaYFecha(
-		@org.springframework.data.repository.query.Param("salaId") Long salaId,
-		@org.springframework.data.repository.query.Param("fecha")  LocalDate fecha
-	);
+    /** CA-HU08-02: Reservas del día para una sala con datos de cliente precargados. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+        WHERE r.sala.id = :salaId
+          AND r.fecha = :fecha
+          AND r.estado <> com.cleancodecrew.sweg.model.EstadoReserva.CANCELADA
+        ORDER BY r.horaInicio ASC
+    """)
+    List<Reserva> findReservasDetalladasPorSalaYFecha(
+        @org.springframework.data.repository.query.Param("salaId") Long salaId,
+        @org.springframework.data.repository.query.Param("fecha")  LocalDate fecha
+    );
 
-	/** CA-HU10-01: todas las reservas con sala y cliente precargados para agregaciones del dashboard. */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
-	""")
-	List<Reserva> findAllDetallado();
+    /** CA-HU10-01: todas las reservas con sala y cliente precargados para agregaciones del dashboard. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+    """)
+    List<Reserva> findAllDetallado();
 
-	/** CA-HU11-01: eventos de acceso (check-in/check-out) con datos precargados para el historial. */
-	@org.springframework.data.jpa.repository.Query("""
-		SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
-		WHERE r.fechaIngreso IS NOT NULL OR r.fechaSalida IS NOT NULL
-	""")
-	List<Reserva> findConAccesos();
+    /** CA-HU11-01: eventos de acceso (check-in/check-out) con datos precargados para el historial. */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT r FROM Reserva r JOIN FETCH r.sala JOIN FETCH r.cliente
+        WHERE r.fechaIngreso IS NOT NULL OR r.fechaSalida IS NOT NULL
+    """)
+    List<Reserva> findConAccesos();
 }
 

@@ -15,8 +15,6 @@ import java.io.IOException;
  *
  * Propósito: Intercepta peticiones HTTP para validar sesión y roles.
  * Sprint 1 - HU1: Sesión y roles.
- *
- * TODO: implementar en el Paso 3.
  */
 @Component
 public class AuthInterceptor implements HandlerInterceptor {
@@ -27,6 +25,9 @@ public class AuthInterceptor implements HandlerInterceptor {
 	public static final String SESSION_ROL = "rol";
 	public static final String SESSION_NOMBRE = "nombre";
 	public static final String SESSION_CORREO = "correo";
+
+	private static final String NO_AUTORIZADO = "No autorizado";
+	private static final String LOG_ROL_INSUFICIENTE = "Request to {} rejected: role {} insufficient";
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
@@ -45,23 +46,21 @@ public class AuthInterceptor implements HandlerInterceptor {
 		// Authorization by path prefix
 		if (path.startsWith("/api/admin/") || path.startsWith("/api/salas")) {
 			if (!"ADMIN".equals(rol)) {
-				log.debug("Request to {} rejected: role {} insufficient", path, rol);
-				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);
+				log.debug(LOG_ROL_INSUFICIENTE, path, rol);
+				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, NO_AUTORIZADO, path);
 				return false;
 			}
 		} else if (path.startsWith("/api/recepcion/")) {
 			// Allow both RECEPCIONISTA and ADMIN to access reception endpoints
 			if (!"RECEPCIONISTA".equals(rol) && !"ADMIN".equals(rol)) {
-				log.debug("Request to {} rejected: role {} insufficient", path, rol);
-				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);
+				log.debug(LOG_ROL_INSUFICIENTE, path, rol);
+				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, NO_AUTORIZADO, path);
 				return false;
 			}
-		} else if (path.startsWith("/api/cliente/") || path.startsWith("/api/reservas")) {
-			if (!"CLIENTE".equals(rol)) {
-				log.debug("Request to {} rejected: role {} insufficient", path, rol);
-				writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, "No autorizado", path);
-				return false;
-			}
+		} else if ((path.startsWith("/api/cliente/") || path.startsWith("/api/reservas")) && !"CLIENTE".equals(rol)) {
+			log.debug(LOG_ROL_INSUFICIENTE, path, rol);
+			writeJsonError(response, HttpServletResponse.SC_FORBIDDEN, NO_AUTORIZADO, path);
+			return false;
 		}
 
 		return true;

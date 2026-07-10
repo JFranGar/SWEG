@@ -37,7 +37,7 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@Valid @RequestBody UsuarioRequest req) {
+    public ResponseEntity<Object> create(@Valid @RequestBody UsuarioRequest req) {
         if (req.getContrasena() == null || req.getContrasena().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "La contraseña es obligatoria al crear un usuario"));
         }
@@ -54,7 +54,7 @@ public class UsuarioController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody UsuarioRequest req) {
+    public ResponseEntity<Object> update(@PathVariable Long id, @Valid @RequestBody UsuarioRequest req) {
         var maybe = usuarioRepository.findById(id);
         if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         Usuario u = maybe.get();
@@ -72,9 +72,9 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<Object> delete(@PathVariable Long id) {
         if (usuarioRepository.findById(id).isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        if (reservaRepository.existsByCliente_Id(id)) {
+        if (reservaRepository.existsByClienteId(id)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "No se puede eliminar un usuario con reservas registradas"));
         }

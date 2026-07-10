@@ -117,7 +117,7 @@
         const card = document.createElement('div');
         card.className = 'panel-card estado-' + s.estadoPanel.toLowerCase();
         card.innerHTML = `
-          <div class="panel-card-nombre" title="${esc(s.nombre)}">${esc(s.nombre)}</div>
+          <div class="panel-card-nombre">${esc(s.nombre)}</div>
           <div class="panel-card-tipo">${esc(s.tipo)}</div>
           <span class="badge badge-${s.estadoPanel.toLowerCase()}">${ESTADO_LABEL_PANEL[s.estadoPanel] || s.estadoPanel}</span>
           <div class="panel-card-cap">Capacidad: ${esc(s.capacidadMaxima)} personas</div>`;

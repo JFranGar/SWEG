@@ -57,7 +57,7 @@ public class ReservaScheduler {
             // Liberar sala si ya no hay ninguna otra reserva EN_USO para ella
             var sala = r.getSala();
             if (sala.getEstado() == EstadoSala.OCUPADA) {
-                boolean hayOtraEnUso = reservaRepository.existsBySala_IdAndEstado(sala.getId(), EstadoReserva.EN_USO);
+                boolean hayOtraEnUso = reservaRepository.existsBySalaIdAndEstado(sala.getId(), EstadoReserva.EN_USO);
                 if (!hayOtraEnUso) {
                     sala.setEstado(EstadoSala.DISPONIBLE);
                     salaRepository.save(sala);
