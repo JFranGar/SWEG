@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Panel de administración de SWGEC: gestión de usuarios, salas de coworking, invitaciones y métricas del sistema.">
   <title>Admin - SWGEC</title>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
@@ -89,6 +90,7 @@
       </div>
     </aside>
     <main class="main container">
+      <h1 class="sr-only">SWGEC — Panel de administración</h1>
       <div class="main-header"><h2 id="main-title">Dashboard</h2></div>
 
       <!-- ══ SECCIÓN DASHBOARD ══ -->
@@ -192,6 +194,7 @@
         </p>
         <div class="card">
           <table class="table">
+            <caption class="sr-only">Invitaciones emitidas: rol, correo, estado, creada por, fecha de expiración y acciones.</caption>
             <thead><tr><th>Rol</th><th>Correo</th><th>Estado</th><th>Creada por</th><th>Expira</th><th>Acciones</th></tr></thead>
             <tbody id="tabla-invitaciones"></tbody>
           </table>
@@ -209,7 +212,7 @@
         <button type="button" class="btn-close" id="modal-invitacion-close" aria-label="Cerrar">×</button>
       </div>
       <form id="invitacion-form">
-        <div class="field"><label>Rol de la cuenta</label>
+        <div class="field"><label for="inv-rol">Rol de la cuenta</label>
           <select id="inv-rol" class="select">
             <option value="">Seleccione...</option>
             <option value="RECEPCIONISTA">RECEPCIONISTA</option>
@@ -217,11 +220,11 @@
           </select>
           <div id="err-inv-rol" class="error-msg"></div>
         </div>
-        <div class="field"><label>Correo del invitado</label>
+        <div class="field"><label for="inv-correo">Correo del invitado</label>
           <input id="inv-correo" type="email" class="input" autocomplete="off" placeholder="persona@swgec.ec">
           <div id="err-inv-correo" class="error-msg"></div>
         </div>
-        <div class="field"><label>Validez (horas)</label>
+        <div class="field"><label for="inv-horas">Validez (horas)</label>
           <input id="inv-horas" type="number" min="1" max="720" class="input" value="48">
           <div id="err-inv-horas" class="error-msg"></div>
         </div>
@@ -244,7 +247,7 @@
         Comparte este enlace con la persona invitada. Es de <strong>un solo uso</strong> y expira automáticamente.
       </p>
       <div class="field">
-        <label>Enlace de registro</label>
+        <label for="inv-link-input">Enlace de registro</label>
         <input id="inv-link-input" class="input" readonly style="font-size:12px">
       </div>
       <div class="modal-footer">
@@ -263,8 +266,8 @@
       </div>
       <form id="sala-form">
         <input type="hidden" id="sala-id">
-        <div class="field"><label>Nombre</label><input id="nombre" class="input" autocomplete="off"><div id="err-nombre" class="error-msg"></div></div>
-        <div class="field"><label>Tipo</label>
+        <div class="field"><label for="nombre">Nombre</label><input id="nombre" class="input" autocomplete="off"><div id="err-nombre" class="error-msg"></div></div>
+        <div class="field"><label for="tipo">Tipo</label>
           <select id="tipo" class="select">
             <option value="">Seleccione...</option>
             <option value="REUNION">REUNION</option>
@@ -273,7 +276,7 @@
           </select>
           <div id="err-tipo" class="error-msg"></div>
         </div>
-        <div class="field"><label>Capacidad máxima</label><input id="capacidad" type="number" min="1" class="input"><div id="err-capacidad" class="error-msg"></div></div>
+        <div class="field"><label for="capacidad">Capacidad máxima</label><input id="capacidad" type="number" min="1" class="input"><div id="err-capacidad" class="error-msg"></div></div>
         <div class="modal-footer">
           <button id="btn-guardar" class="btn btn-primary">Guardar</button>
           <button type="button" id="btn-cancelar-sala" class="btn btn-secondary">Cancelar</button>
@@ -291,14 +294,14 @@
       </div>
       <form id="usuario-form">
         <input type="hidden" id="usuario-id">
-        <div class="field"><label>Nombre</label><input id="u-nombre" class="input" autocomplete="off"><div id="err-u-nombre" class="error-msg"></div></div>
-        <div class="field"><label>Correo</label><input id="u-correo" type="email" class="input" autocomplete="off"><div id="err-u-correo" class="error-msg"></div></div>
+        <div class="field"><label for="u-nombre">Nombre</label><input id="u-nombre" class="input" autocomplete="off"><div id="err-u-nombre" class="error-msg"></div></div>
+        <div class="field"><label for="u-correo">Correo</label><input id="u-correo" type="email" class="input" autocomplete="off"><div id="err-u-correo" class="error-msg"></div></div>
         <div class="field">
-          <label>Contraseña <span style="color:var(--text-muted);font-size:11px">(vacío = no cambiar)</span></label>
+          <label for="u-contrasena">Contraseña <span style="color:var(--text-muted);font-size:11px">(vacío = no cambiar)</span></label>
           <input id="u-contrasena" type="password" class="input" autocomplete="new-password">
           <div id="err-u-contrasena" class="error-msg"></div>
         </div>
-        <div class="field"><label>Rol</label>
+        <div class="field"><label for="u-rol">Rol</label>
           <select id="u-rol" class="select">
             <option value="">Seleccione...</option>
             <option value="CLIENTE">CLIENTE</option>
@@ -337,8 +340,8 @@
   </dialog>
 
   <div id="toast-container"></div>
-  <script src="/js/api.js"></script>
-  <script src="/js/guards.js"></script>
-  <script src="/js/admin.js"></script>
+  <script defer src="/js/api.js"></script>
+  <script defer src="/js/guards.js"></script>
+  <script defer src="/js/admin.js"></script>
 </body>
 </html>

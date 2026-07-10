@@ -1,0 +1,15 @@
+# SWGEC
+
+> Sistema de Gestión de Espacios de Coworking (SWGEC): aplicación web para administrar salas de coworking, reservas de clientes y control de accesos. Maneja tres roles: Administrador, Recepcionista y Cliente.
+
+## Páginas principales
+
+- [Inicio de sesión](/html/login.html): acceso al sistema según el rol del usuario.
+- [Registro de cliente](/html/registro.html): creación de una cuenta de cliente.
+- [Activación por invitación](/html/registro-invitacion.html): alta de cuenta mediante enlace de invitación.
+
+## Notas técnicas
+
+- La API REST se expone bajo `/api/` y requiere una sesión autenticada.
+- Stack: Spring Boot + PostgreSQL con frontend estático (Vanilla JS).
+- Los paneles de Administrador, Recepcionista y Cliente son privados y requieren inicio de sesión.

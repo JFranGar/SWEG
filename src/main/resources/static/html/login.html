@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Inicia sesión en SWGEC, el sistema de gestión de espacios de coworking, para administrar salas, reservas y accesos según tu rol.">
   <title>Login - SWGEC</title>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
@@ -19,11 +20,11 @@
       </div>
       <form id="login-form" novalidate>
         <div class="field">
-          <label>Seleccionar rol</label>
-          <div class="role-grid">
-            <div class="role-card" data-rol="ADMIN"><span class="role-icon">👑</span>Administrador</div>
-            <div class="role-card" data-rol="RECEPCIONISTA"><span class="role-icon">🛎️</span>Recepcionista</div>
-            <div class="role-card" data-rol="CLIENTE"><span class="role-icon">👤</span>Cliente</div>
+          <label id="lbl-rol">Seleccionar rol</label>
+          <div class="role-grid" role="radiogroup" aria-labelledby="lbl-rol">
+            <div class="role-card" data-rol="ADMIN" role="radio" aria-checked="false" tabindex="0"><span class="role-icon" aria-hidden="true">👑</span>Administrador</div>
+            <div class="role-card" data-rol="RECEPCIONISTA" role="radio" aria-checked="false" tabindex="0"><span class="role-icon" aria-hidden="true">🛎️</span>Recepcionista</div>
+            <div class="role-card" data-rol="CLIENTE" role="radio" aria-checked="false" tabindex="0"><span class="role-icon" aria-hidden="true">👤</span>Cliente</div>
           </div>
           <input type="hidden" id="rol-seleccionado" name="rolSeleccionado">
           <div id="err-rol" class="error-msg"></div>
@@ -47,7 +48,7 @@
     </section>
   </main>
   <div id="toast-container"></div>
-  <script src="/js/api.js"></script>
-  <script src="/js/auth.js"></script>
+  <script defer src="/js/api.js"></script>
+  <script defer src="/js/auth.js"></script>
 </body>
 </html>

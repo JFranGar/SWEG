@@ -55,13 +55,23 @@
     // On the login page avoid calling /api/auth/me to prevent a visible 401 in Network tab.
     // The redirect-by-session check is useful on protected pages, but on login it only creates noise.
 
-    // role card click handling
-    roleCards.forEach(card=>card.addEventListener('click', ()=>{
-      roleCards.forEach(c=>c.classList.remove('active'));
+    // Selección de rol accesible (role="radio" dentro de role="radiogroup")
+    function seleccionarRol(card){
+      roleCards.forEach(c=>{ c.classList.remove('active'); c.setAttribute('aria-checked','false'); });
       card.classList.add('active');
+      card.setAttribute('aria-checked','true');
+      card.focus();
       if(rolHidden) rolHidden.value = card.dataset.rol;
       if(errRol) errRol.textContent='';
-    }));
+    }
+    roleCards.forEach((card,idx)=>{
+      card.addEventListener('click', ()=>seleccionarRol(card));
+      card.addEventListener('keydown', (ev)=>{
+        if(ev.key===' ' || ev.key==='Enter'){ ev.preventDefault(); seleccionarRol(card); }
+        else if(ev.key==='ArrowRight' || ev.key==='ArrowDown'){ ev.preventDefault(); seleccionarRol(roleCards[(idx+1)%roleCards.length]); }
+        else if(ev.key==='ArrowLeft' || ev.key==='ArrowUp'){ ev.preventDefault(); seleccionarRol(roleCards[(idx-1+roleCards.length)%roleCards.length]); }
+      });
+    });
 
     form.addEventListener('submit',onSubmit);
   })();

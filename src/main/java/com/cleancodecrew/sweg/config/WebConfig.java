@@ -10,8 +10,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  * Propósito: Registrar `AuthInterceptor` en el contexto web.
  * Sprint 1 - Registra el interceptor para control de sesión.
- *
- * TODO: implementar en el Paso 3.
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {

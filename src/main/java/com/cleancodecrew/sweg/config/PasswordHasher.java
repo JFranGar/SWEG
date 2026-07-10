@@ -13,8 +13,6 @@ import java.util.Base64;
  *
  * Propósito: Hash SHA-256 con sal para contraseñas.
  * Sprint 1 - HU1: Hash SHA-256 + salt.
- *
- * TODO: implementar en el Paso 3.
  */
 @Component
 public class PasswordHasher {

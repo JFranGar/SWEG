@@ -41,8 +41,8 @@ public class HorarioReglaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizar(@PathVariable Long id, @Valid @RequestBody HorarioReglaRequest req) {
-        return repo.findById(id).map(r -> {
+    public ResponseEntity<Object> actualizar(@PathVariable Long id, @Valid @RequestBody HorarioReglaRequest req) {
+        return repo.findById(id).<ResponseEntity<Object>>map(r -> {
             r.setTipo(req.getTipo());
             r.setHoraInicio(req.getHoraInicio());
             r.setHoraFin(req.getHoraFin());
@@ -54,7 +54,7 @@ public class HorarioReglaController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Object> eliminar(@PathVariable Long id) {
         if (!repo.existsById(id)) return ResponseEntity.notFound().build();
         repo.deleteById(id);
         return ResponseEntity.ok(Map.of("mensaje", "Regla eliminada"));

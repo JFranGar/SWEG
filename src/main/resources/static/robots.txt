@@ -1,0 +1,9 @@
+# robots.txt - SWGEC (Sistema de Gestión de Espacios de Coworking)
+# Permite el rastreo de las páginas públicas y bloquea la API y los paneles privados.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /html/admin.html
+Disallow: /html/recepcionista.html
+Disallow: /html/cliente.html

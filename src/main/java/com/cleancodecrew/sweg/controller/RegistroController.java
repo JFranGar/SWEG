@@ -55,7 +55,7 @@ public class RegistroController {
      * El backend fuerza el rol CLIENTE; ignora cualquier intento de escalar privilegios.
      */
     @PostMapping("/registro")
-    public ResponseEntity<?> registrarCliente(@Valid @RequestBody RegistroClienteRequest req,
+    public ResponseEntity<Object> registrarCliente(@Valid @RequestBody RegistroClienteRequest req,
                                               HttpServletRequest http) {
         String correo = req.getCorreo().trim().toLowerCase();
         if (usuarioRepository.existsByCorreoIgnoreCase(correo)) {
@@ -81,7 +81,7 @@ public class RegistroController {
      * Devuelve el rol y correo sugerido solo si la invitación sigue siendo válida.
      */
     @GetMapping("/invitacion/{token}")
-    public ResponseEntity<?> verInvitacion(@PathVariable String token, HttpServletRequest http) {
+    public ResponseEntity<Object> verInvitacion(@PathVariable String token, HttpServletRequest http) {
         Invitacion inv = invitacionRepository.findByToken(token).orElse(null);
         if (inv == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -103,7 +103,7 @@ public class RegistroController {
      */
     @Transactional
     @PostMapping("/invitacion/{token}/completar")
-    public ResponseEntity<?> completarInvitacion(@PathVariable String token,
+    public ResponseEntity<Object> completarInvitacion(@PathVariable String token,
                                                 @Valid @RequestBody CompletarRegistroRequest req,
                                                 HttpServletRequest http) {
         Invitacion inv = invitacionRepository.findByToken(token).orElse(null);

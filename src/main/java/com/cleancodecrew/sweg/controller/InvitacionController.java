@@ -65,7 +65,7 @@ public class InvitacionController {
      */
     @Transactional
     @PostMapping
-    public ResponseEntity<?> crear(@Valid @RequestBody InvitacionRequest req, HttpServletRequest http) {
+    public ResponseEntity<Object> crear(@Valid @RequestBody InvitacionRequest req, HttpServletRequest http) {
         Usuario admin = adminActual(http);
         if (admin == null || admin.getRol() != Rol.ADMIN) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
@@ -98,7 +98,7 @@ public class InvitacionController {
     /** Revoca una invitación pendiente para que no pueda utilizarse. */
     @Transactional
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> revocar(@PathVariable Long id, HttpServletRequest http) {
+    public ResponseEntity<Object> revocar(@PathVariable Long id, HttpServletRequest http) {
         Invitacion inv = invitacionRepository.findById(id).orElse(null);
         if (inv == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

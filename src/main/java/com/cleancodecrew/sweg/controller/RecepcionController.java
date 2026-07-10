@@ -58,7 +58,7 @@ public class RecepcionController {
 
     /** CA-HU07-01, CA-HU07-04: busca reservas activas del dia por cliente. */
     @GetMapping("/buscar-reserva")
-    public ResponseEntity<?> buscar(
+    public ResponseEntity<Object> buscar(
             @RequestParam(name = "correoCliente", required = false) String correoCliente,
             @RequestParam(name = "correo", required = false) String correoAlias,
             HttpServletRequest req) {
@@ -98,7 +98,7 @@ public class RecepcionController {
     /** CA-HU07-02, CA-HU07-03, CA-HU11-02: registra ingreso (check-in) y persiste el estado de la sala. */
     @Transactional
     @PatchMapping("/reservas/{id}/ingreso")
-    public ResponseEntity<?> registrarIngreso(@PathVariable Long id, HttpServletRequest req) {
+    public ResponseEntity<Object> registrarIngreso(@PathVariable Long id, HttpServletRequest req) {
         Reserva r = reservaRepo.findById(id).orElse(null);
         if (r == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -124,7 +124,7 @@ public class RecepcionController {
      */
     @Transactional
     @PatchMapping("/reservas/{id}/salida")
-    public ResponseEntity<?> registrarSalida(
+    public ResponseEntity<Object> registrarSalida(
             @PathVariable Long id,
             @RequestParam(defaultValue = "false") boolean limpieza,
             HttpServletRequest req) {
@@ -208,7 +208,7 @@ public class RecepcionController {
 
     /** CA-HU08-02: Reservas del día para una sala específica (vista recepcionista). */
     @GetMapping("/salas/{id}/reservas-hoy")
-    public ResponseEntity<?> reservasSalaHoy(@PathVariable Long id, HttpServletRequest req) {
+    public ResponseEntity<Object> reservasSalaHoy(@PathVariable Long id, HttpServletRequest req) {
         if (salaRepository.findById(id).isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(ApiError.of(404, "Sala no encontrada", req.getRequestURI()));
@@ -220,7 +220,7 @@ public class RecepcionController {
     /** CA-HU08-03: Marca una sala EN_LIMPIEZA como DISPONIBLE una vez finalizada la limpieza. */
     @Transactional
     @PatchMapping("/salas/{id}/disponible")
-    public ResponseEntity<?> marcarDisponible(@PathVariable Long id, HttpServletRequest req) {
+    public ResponseEntity<Object> marcarDisponible(@PathVariable Long id, HttpServletRequest req) {
         var maybe = salaRepository.findById(id);
         if (maybe.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)

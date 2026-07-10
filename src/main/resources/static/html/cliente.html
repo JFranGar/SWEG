@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="es">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Panel de cliente de SWGEC: busca salas de coworking disponibles, crea y gestiona tus reservas.">
   <title>Cliente - SWGEC</title>
   <link rel="stylesheet" href="/css/theme.css">
   <link rel="stylesheet" href="/css/components.css">
@@ -186,6 +187,7 @@
       </div>
     </aside>
     <main class="main container">
+      <h1 class="sr-only">SWGEC — Reservas</h1>
 
       <!-- ══ BUSCAR SALAS ══ -->
       <div id="section-buscar-salas" style="display:none">
@@ -199,7 +201,7 @@
               Elige el tipo y la sala para ver su disponibilidad del día.
             </p>
             <div class="field">
-              <label>Tipo de Sala</label>
+              <label for="filtro-tipo">Tipo de Sala</label>
               <select id="filtro-tipo" class="select">
                 <option value="">Todos los tipos</option>
                 <option value="REUNION">Reunión</option>
@@ -208,14 +210,14 @@
               </select>
             </div>
             <div class="field">
-              <label>Sala</label>
+              <label for="filtro-sala">Sala</label>
               <select id="filtro-sala" class="select">
                 <option value="">Seleccione una sala...</option>
               </select>
               <div id="filtro-sala-hint" class="capacity-hint"></div>
             </div>
             <div class="field">
-              <label>Fecha</label>
+              <label for="filtro-fecha">Fecha</label>
               <input id="filtro-fecha" type="date" class="input">
               <div id="err-filtro-fecha" class="error-msg"></div>
             </div>
@@ -258,29 +260,29 @@
             <div class="card-title">Datos de la reserva</div>
             <form id="reserva-form">
               <div class="field">
-                <label>Sala</label>
+                <label for="sala">Sala</label>
                 <select id="sala" class="select"></select>
                 <div id="err-sala" class="error-msg"></div>
               </div>
               <div class="field">
-                <label>Cantidad de personas</label>
+                <label for="cantidad-personas">Cantidad de personas</label>
                 <input id="cantidad-personas" type="number" min="1" class="input" placeholder="Ej: 5">
                 <div id="capacity-hint" class="capacity-hint"></div>
                 <div id="err-cantidad" class="error-msg"></div>
               </div>
               <div class="field">
-                <label>Fecha</label>
+                <label for="fecha">Fecha</label>
                 <input id="fecha" type="date" class="input">
                 <div id="err-fecha" class="error-msg"></div>
               </div>
               <div style="display:flex;gap:12px">
                 <div style="flex:1" class="field">
-                  <label>Hora inicio</label>
+                  <label for="hora-inicio">Hora inicio</label>
                   <input id="hora-inicio" type="time" class="input">
                   <div id="err-hora-inicio" class="error-msg"></div>
                 </div>
                 <div style="flex:1" class="field">
-                  <label>Hora fin</label>
+                  <label for="hora-fin">Hora fin</label>
                   <input id="hora-fin" type="time" class="input">
                   <div id="err-hora-fin" class="error-msg"></div>
                 </div>
@@ -343,29 +345,29 @@
         <form id="editar-form">
           <input type="hidden" id="editar-id">
           <div class="field">
-            <label>Sala</label>
+            <label for="editar-sala">Sala</label>
             <select id="editar-sala" class="select"></select>
             <div id="err-editar-sala" class="error-msg"></div>
           </div>
           <div class="field">
-            <label>Cantidad de personas</label>
+            <label for="editar-cantidad">Cantidad de personas</label>
             <input id="editar-cantidad" type="number" min="1" class="input" placeholder="Ej: 5">
             <div id="edit-capacity-hint" class="capacity-hint"></div>
             <div id="err-editar-cantidad" class="error-msg"></div>
           </div>
           <div class="field">
-            <label>Fecha</label>
+            <label for="editar-fecha">Fecha</label>
             <input id="editar-fecha" type="date" class="input">
             <div id="err-editar-fecha" class="error-msg"></div>
           </div>
           <div style="display:flex;gap:12px">
             <div style="flex:1" class="field">
-              <label>Hora inicio</label>
+              <label for="editar-inicio">Hora inicio</label>
               <input id="editar-inicio" type="time" class="input">
               <div id="err-editar-inicio" class="error-msg"></div>
             </div>
             <div style="flex:1" class="field">
-              <label>Hora fin</label>
+              <label for="editar-fin">Hora fin</label>
               <input id="editar-fin" type="time" class="input">
               <div id="err-editar-fin" class="error-msg"></div>
             </div>
@@ -387,7 +389,7 @@
         </div>
         <div id="edit-tl-wrap" style="display:none">
           <div id="edit-tl-rows" class="tl-scroll" style="max-height:330px"></div>
-          <div class="tl-legend" style="font-size:10px;margin-top:8px">
+          <div class="tl-legend" style="font-size:0.75rem;margin-top:8px">
             <span><span class="tl-leg-dot" style="background:rgba(0,200,81,0.35)"></span>Libre</span>
             <span><span class="tl-leg-dot" style="background:rgba(255,68,68,0.35)"></span>Ocupado</span>
             <span><span class="tl-leg-dot" style="background:rgba(15,15,15,0.65)"></span>Pasado</span>
@@ -421,8 +423,8 @@
   </dialog>
 
   <div id="toast-container"></div>
-  <script src="/js/api.js"></script>
-  <script src="/js/guards.js"></script>
-  <script src="/js/cliente.js"></script>
+  <script defer src="/js/api.js"></script>
+  <script defer src="/js/guards.js"></script>
+  <script defer src="/js/cliente.js"></script>
 </body>
 </html>
