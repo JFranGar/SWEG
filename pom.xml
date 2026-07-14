@@ -57,9 +57,24 @@
 			<optional>true</optional>
 		</dependency>
 
+		<!--
+			spring-boot-starter-test ya incluye de forma transitiva JUnit 5 (Jupiter),
+			Mockito (mockito-core + mockito-junit-jupiter), AssertJ y Hamcrest.
+			No se añaden versiones explícitas para respetar las gestionadas por el BOM.
+		-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Mockito declarado explícitamente para dejar clara la intención de las pruebas
+		     unitarias con mocks (la versión la gestiona el BOM de Spring Boot).
+		     Las pruebas son 100% unitarias: no levantan el contexto de Spring ni usan
+		     base de datos, por lo que no se requiere H2 ni un datasource de test. -->
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -77,6 +92,46 @@
 						</exclude>
 					</excludes>
 				</configuration>
+			</plugin>
+			<!--
+				JaCoCo: instrumenta el código durante los tests y genera el reporte de
+				cobertura (target/site/jacoco/jacoco.xml) que consume SonarQube.
+				- prepare-agent: engancha el agente antes de ejecutar los tests.
+				- report (fase test): produce el XML/HTML tras 'mvnw test'.
+				Se excluyen del cálculo el bootstrap, los enums sin lógica y los DTO
+				(objetos de transporte sin ramas), práctica habitual para que la métrica
+				refleje la cobertura de la lógica de negocio real.
+			-->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.12</version>
+				<configuration>
+					<excludes>
+						<exclude>**/SwegApplication.class</exclude>
+						<exclude>**/dto/**</exclude>
+						<exclude>**/model/EstadoReserva.class</exclude>
+						<exclude>**/model/EstadoSala.class</exclude>
+						<exclude>**/model/Rol.class</exclude>
+						<exclude>**/model/TipoSala.class</exclude>
+						<exclude>**/model/TipoRegla.class</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>test</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

@@ -189,21 +189,8 @@ public class RecepcionController {
         LocalDate hoy = LocalDate.now();
         Set<Long> salasConReservaHoy = reservaRepo.findActivasHoy(hoy)
                 .stream().map(r -> r.getSala().getId()).collect(Collectors.toSet());
-
-        List<PanelSalaResponse> panel = salaRepository.findAll().stream()
-                .filter(s -> s.getEstado() != EstadoSala.ELIMINADA)
-                .map(s -> {
-                    String estadoPanel = switch (s.getEstado()) {
-                        case OCUPADA       -> "EN_USO";
-                        case EN_LIMPIEZA   -> "EN_LIMPIEZA";
-                        case MANTENIMIENTO -> "MANTENIMIENTO";
-                        default -> salasConReservaHoy.contains(s.getId()) ? "RESERVADA" : "DISPONIBLE";
-                    };
-                    return new PanelSalaResponse(s.getId(), s.getNombre(), s.getTipo().name(), s.getCapacidadMaxima(), estadoPanel);
-                })
-                .sorted((a, b) -> a.nombre().compareToIgnoreCase(b.nombre()))
-                .toList();
-        return ResponseEntity.ok(panel);
+        return ResponseEntity.ok(
+                PanelSalaResponse.construirPanel(salaRepository.findAll(), salasConReservaHoy));
     }
 
     /** CA-HU08-02: Reservas del día para una sala específica (vista recepcionista). */
